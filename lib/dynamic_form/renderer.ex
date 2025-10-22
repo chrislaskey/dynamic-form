@@ -21,18 +21,19 @@ defmodule DynamicForm.Renderer do
 
   alias DynamicForm.Instance
 
-  attr :instance, Instance, required: true, doc: "The form instance configuration"
-  attr :form, Phoenix.HTML.Form, required: true, doc: "The Phoenix form struct"
-  attr :submit_text, :string, default: nil, doc: "Text for the submit button"
-  attr :phx_submit, :string, default: "submit", doc: "Phoenix event name for form submission"
+  attr(:instance, Instance, required: true, doc: "The form instance configuration")
+  attr(:form, Phoenix.HTML.Form, required: true, doc: "The Phoenix form struct")
+  attr(:submit_text, :string, default: nil, doc: "Text for the submit button")
+  attr(:phx_submit, :string, default: "submit", doc: "Phoenix event name for form submission")
 
-  attr :phx_change, :string,
+  attr(:phx_change, :string,
     default: "validate",
     doc: "Phoenix event name for form validation"
+  )
 
-  attr :target, :any, default: nil, doc: "Phoenix LiveView target for events"
-  attr :form_id, :string, default: "dynamic-form", doc: "HTML ID for the form element"
-  attr :disabled, :boolean, default: false, doc: "Whether the form is disabled"
+  attr(:target, :any, default: nil, doc: "Phoenix LiveView target for events")
+  attr(:form_id, :string, default: "dynamic-form", doc: "HTML ID for the form element")
+  attr(:disabled, :boolean, default: false, doc: "Whether the form is disabled")
 
   def render(assigns) do
     submit_text = assigns.submit_text || "Submit"

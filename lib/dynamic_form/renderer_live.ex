@@ -140,6 +140,7 @@ defmodule DynamicForm.RendererLive do
   @impl true
   def handle_event("submit", params, socket) do
     form_params = Map.get(params, socket.assigns.form_name, %{})
+
     changeset =
       socket.assigns.instance
       |> Changeset.create_changeset(form_params)
