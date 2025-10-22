@@ -121,13 +121,13 @@ defmodule DynamicForm.RendererLive do
   end
 
   @impl true
-  def handle_event("validate", %{} = params, socket) do
+  def handle_event("validate", params, socket) do
     form_params = Map.get(params, socket.assigns.form_name, %{})
 
     changeset =
       socket.assigns.instance
       |> Changeset.create_changeset(form_params)
-      |> Map.put(:action, :validate)
+      |> Map.put(:action, socket.assigns.changeset.action)
 
     form = to_form(changeset, as: socket.assigns.form_name)
 
@@ -138,9 +138,12 @@ defmodule DynamicForm.RendererLive do
   end
 
   @impl true
-  def handle_event("submit", %{} = params, socket) do
+  def handle_event("submit", params, socket) do
     form_params = Map.get(params, socket.assigns.form_name, %{})
-    changeset = Changeset.create_changeset(socket.assigns.instance, form_params)
+    changeset =
+      socket.assigns.instance
+      |> Changeset.create_changeset(form_params)
+      |> Map.put(:action, :updated)
 
     if changeset.valid? do
       socket = assign(socket, :submitting, true)
