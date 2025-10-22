@@ -1,18 +1,21 @@
-# Example
+# DynamicForm
 
-To start your Phoenix server:
+A library for creating dynamic forms with full backend validation using
+changesets and calls to backend functions in Elixir Phoenix. Also supports
+building forms through a WYSIWYG interface.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+This library enables users to build forms dynamically through a visual interface,
+then render those forms using standard Phoenix LiveView patterns with robust
+validation and backend integration.
 
-Now you can visit [`localhost:4444`](http://localhost:4444) from your browser.
+## Installation
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+When using as a path dependency in your Phoenix app:
 
-## Learn more
-
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+```elixir
+def deps do
+  [
+    {:dynamic_form, path: "../"}
+  ]
+end
+```

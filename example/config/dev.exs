@@ -1,5 +1,12 @@
 import Config
 
+# Configure phoenix_live_reload to watch the DynamicForm library directory
+# This enables file watching for the path dependency
+config :phoenix_live_reload,
+  dirs: [
+    Path.expand("../../lib", __DIR__)  # Watch the library's lib directory
+  ]
+
 # Configure your database
 config :example, Example.Repo,
   database: Path.expand("../example_dev.db", __DIR__),
@@ -24,7 +31,9 @@ config :example, ExampleWeb.Endpoint,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:example, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:example, ~w(--watch)]}
-  ]
+  ],
+  # Enable hot code reloading for the DynamicForm library
+  reloadable_apps: [:dynamic_form]
 
 # ## SSL Support
 #
@@ -55,7 +64,9 @@ config :example, ExampleWeb.Endpoint,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/example_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/example_web/(controllers|live|components)/.*(ex|heex)$",
+      # Watch DynamicForm library files (two directories up from config/)
+      ~r"../../lib/dynamic_form/.*(ex)$"
     ]
   ]
 
