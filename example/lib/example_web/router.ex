@@ -18,6 +18,7 @@ defmodule ExampleWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/form-test", FormTestLive
   end
 
   # Other scopes may use custom stacks.

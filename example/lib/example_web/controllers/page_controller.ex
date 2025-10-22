@@ -2,10 +2,17 @@ defmodule ExampleWeb.PageController do
   use ExampleWeb, :controller
 
   def home(conn, _params) do
-    # Create a test instance
-    test_instance = DynamicForm.Instance.new("test-1", "Test Form",
-      description: "A test form to verify library loading"
-    )
+    # Create a simple test instance
+    test_instance = %DynamicForm.Instance{
+      id: "test-1",
+      name: "Test Form",
+      description: "A test form to verify library loading",
+      fields: [],
+      backend: %DynamicForm.Instance.Backend{
+        module: Example.TestBackend,
+        config: []
+      }
+    }
 
     # The home page is often custom made,
     # so skip the default app layout.

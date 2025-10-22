@@ -19,9 +19,9 @@ defmodule DynamicForm.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, "~> 1.0.0"},
-      {:phoenix_html, "~> 4.1"},
-      {:ecto, "~> 3.10"}
+      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_html, "~> 4.0"},
+      {:ecto, "~> 3.0"}
     ]
   end
 end
