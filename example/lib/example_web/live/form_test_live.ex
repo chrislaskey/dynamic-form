@@ -41,8 +41,8 @@ defmodule ExampleWeb.FormTestLive do
           instance={@form_instance}
           form={@form}
           submit_text="Submit Form"
-          submit_event="submit"
-          validate_event="validate"
+          phx_submit="submit"
+          phx_change="validate"
           form_id="test-form"
         />
       </div>
@@ -97,7 +97,10 @@ defmodule ExampleWeb.FormTestLive do
 
   @impl true
   def handle_event("submit", %{"form" => params}, socket) do
-    changeset = Changeset.create_changeset(socket.assigns.form_instance, params)
+    changeset =
+      socket.assigns.form_instance
+      |> Changeset.create_changeset(params)
+      |> Map.put(:action, :update)
 
     case changeset.valid? do
       true ->

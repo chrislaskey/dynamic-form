@@ -11,8 +11,8 @@ defmodule DynamicForm.Renderer do
         instance={@form_instance}
         form={@form}
         submit_text="Submit Form"
-        submit_event="submit"
-        validate_event="validate"
+        phx_submit="submit"
+        phx_change="validate"
         form_id="my-dynamic-form"
       />
   """
@@ -24,9 +24,9 @@ defmodule DynamicForm.Renderer do
   attr :instance, Instance, required: true, doc: "The form instance configuration"
   attr :form, Phoenix.HTML.Form, required: true, doc: "The Phoenix form struct"
   attr :submit_text, :string, default: nil, doc: "Text for the submit button"
-  attr :submit_event, :string, default: "submit", doc: "Phoenix event name for form submission"
+  attr :phx_submit, :string, default: "submit", doc: "Phoenix event name for form submission"
 
-  attr :validate_event, :string,
+  attr :phx_change, :string,
     default: "validate",
     doc: "Phoenix event name for form validation"
 
@@ -43,8 +43,8 @@ defmodule DynamicForm.Renderer do
       :let={f}
       for={@form}
       id={@form_id}
-      phx-submit={@submit_event}
-      phx-change={@validate_event}
+      phx-submit={@phx_submit}
+      phx-change={@phx_change}
       phx-target={@target}
     >
       <%= for field <- @instance.fields do %>
