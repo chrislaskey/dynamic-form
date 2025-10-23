@@ -53,6 +53,43 @@ defmodule DynamicForm.Instance do
   defmodule Field do
     @moduledoc """
     Represents a single form field with its configuration and validation rules.
+
+    ## Conditional Visibility
+
+    Fields can be conditionally shown based on the value of another field using the
+    `visible_when` option. When `visible_when` is `nil`, the field is always visible.
+
+    ### Supported Operators
+
+    - `"equals"` - Field value must equal the specified value
+    - `"valid"` - Field must be valid (has a value and passes all validations)
+
+    ### Examples
+
+        # Show field when payment_method equals "credit_card"
+        %Field{
+          id: "credit_card_number",
+          name: "credit_card_number",
+          type: "string",
+          label: "Credit Card Number",
+          visible_when: %{
+            field: "payment_method",
+            operator: "equals",
+            value: "credit_card"
+          }
+        }
+
+        # Show field when email is valid (filled and passes email validation)
+        %Field{
+          id: "email_preferences",
+          name: "email_preferences",
+          type: "select",
+          label: "Email Preferences",
+          visible_when: %{
+            field: "email",
+            operator: "valid"
+          }
+        }
     """
 
     @enforce_keys [:id, :name, :type]
@@ -68,8 +105,15 @@ defmodule DynamicForm.Instance do
       :validations,
       :position,
       :required,
+      :visible_when,
       :metadata
     ]
+
+    @type condition :: %{
+            field: String.t(),
+            operator: String.t(),
+            value: any()
+          }
 
     @type t :: %__MODULE__{
             id: String.t(),
@@ -83,6 +127,7 @@ defmodule DynamicForm.Instance do
             validations: [Validation.t()] | nil,
             position: integer() | nil,
             required: boolean() | nil,
+            visible_when: condition() | nil,
             metadata: map() | nil
           }
   end

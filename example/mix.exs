@@ -34,7 +34,6 @@ defmodule Example.MixProject do
     [
       # Local DynamicForm library
       {:dynamic_form, path: "../", override: true},
-
       {:phoenix, "~> 1.7.20"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},

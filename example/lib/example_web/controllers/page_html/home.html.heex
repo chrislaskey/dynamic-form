@@ -16,7 +16,7 @@
       <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
         <h2 class="text-2xl font-semibold text-green-900 mb-4">✓ Library Status</h2>
         <p class="text-green-700">
-          <strong>Library Message:</strong> <%= inspect(@test_instance) %>
+          <strong>Library Message:</strong> {inspect(@test_instance)}
         </p>
       </div>
 
@@ -25,19 +25,19 @@
         <dl class="space-y-2">
           <div>
             <dt class="font-semibold text-blue-900">ID:</dt>
-            <dd class="text-blue-700"><%= @test_instance.id %></dd>
+            <dd class="text-blue-700">{@test_instance.id}</dd>
           </div>
           <div>
             <dt class="font-semibold text-blue-900">Name:</dt>
-            <dd class="text-blue-700"><%= @test_instance.name %></dd>
+            <dd class="text-blue-700">{@test_instance.name}</dd>
           </div>
           <div>
             <dt class="font-semibold text-blue-900">Description:</dt>
-            <dd class="text-blue-700"><%= @test_instance.description %></dd>
+            <dd class="text-blue-700">{@test_instance.description}</dd>
           </div>
           <div>
             <dt class="font-semibold text-blue-900">Fields:</dt>
-            <dd class="text-blue-700"><%= length(@test_instance.fields) %> fields</dd>
+            <dd class="text-blue-700">{length(@test_instance.fields)} fields</dd>
           </div>
         </dl>
       </div>
@@ -58,7 +58,10 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Hot Reload Test Instructions</h3>
         <ol class="list-decimal list-inside space-y-2 text-gray-700">
           <li>Keep this page open in your browser</li>
-          <li>Edit <code class="bg-gray-200 px-1 rounded">/lib/dynamic_form.ex</code> and change a module</li>
+          <li>
+            Edit <code class="bg-gray-200 px-1 rounded">/lib/dynamic_form.ex</code>
+            and change a module
+          </li>
           <li>Save the file and refresh this page</li>
           <li>You should see the updated message above without restarting the server</li>
         </ol>

@@ -20,6 +20,8 @@ defmodule ExampleWeb.Router do
     get "/", PageController, :home
     live "/form-test", FormTestLive
     live "/form-test-component", FormTestComponentLive
+    live "/payment-form", PaymentFormLive
+    live "/builder-mockups", BuilderMockupsLive
   end
 
   # Other scopes may use custom stacks.

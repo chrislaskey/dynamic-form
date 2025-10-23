@@ -48,7 +48,7 @@ defmodule DynamicForm.Renderer do
       phx-change={@phx_change}
       phx-target={@target}
     >
-      <%= for field <- @instance.fields do %>
+      <%= for field <- visible_fields(@instance.fields, @form) do %>
         <%= render_field(field, f, disabled: @disabled) %>
       <% end %>
 
@@ -67,6 +67,50 @@ defmodule DynamicForm.Renderer do
       </div>
     </.form>
     """
+  end
+
+  # Filter fields based on visibility conditions
+  defp visible_fields(fields, form) do
+    Enum.filter(fields, fn field ->
+      should_display_field?(field, form)
+    end)
+  end
+
+  # Field with no visibility condition is always visible
+  defp should_display_field?(%Instance.Field{visible_when: nil}, _form), do: true
+
+  # Field with visibility condition - check if condition is met
+  defp should_display_field?(%Instance.Field{visible_when: condition}, form) do
+    evaluate_condition(condition, form)
+  end
+
+  # Evaluate "equals" operator
+  defp evaluate_condition(%{field: field_name, operator: "equals", value: expected}, form) do
+    field_atom = String.to_existing_atom(field_name)
+    current_value = Phoenix.HTML.Form.input_value(form, field_atom)
+    current_value == expected
+  rescue
+    ArgumentError -> false
+  end
+
+  # Evaluate "valid" operator - field must have a value and be valid (no errors)
+  defp evaluate_condition(%{field: field_name, operator: "valid"}, form) do
+    field_atom = String.to_existing_atom(field_name)
+    current_value = Phoenix.HTML.Form.input_value(form, field_atom)
+
+    # Check if field has a value (not nil, not empty string)
+    has_value = current_value != nil and current_value != ""
+
+    # Check if field has no errors in the changeset
+    has_no_errors =
+      case Keyword.get(form.errors || [], field_atom) do
+        nil -> true
+        _ -> false
+      end
+
+    has_value and has_no_errors
+  rescue
+    ArgumentError -> false
   end
 
   # Render a string/text input field

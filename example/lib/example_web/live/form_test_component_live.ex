@@ -29,19 +29,23 @@ defmodule ExampleWeb.FormTestComponentLive do
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">LiveComponent Renderer Test</h1>
         <p class="mt-2 text-gray-600">
-          This form uses the <code class="bg-gray-100 px-2 py-1 rounded">DynamicForm.RendererLive</code>
+          This form uses the
+          <code class="bg-gray-100 px-2 py-1 rounded">DynamicForm.RendererLive</code>
           LiveComponent with automatic state management.
         </p>
       </div>
-
-      <!-- Mode Selector -->
+      
+    <!-- Mode Selector -->
       <div class="mb-6 p-4 bg-gray-50 rounded-lg">
         <h3 class="font-semibold mb-3 text-gray-900">Callback Mode:</h3>
         <p class="text-sm text-gray-600 mb-3">
           Switch between different callback patterns to see how the component behaves.
         </p>
         <.form for={%{}} phx-change="change_mode">
-          <select name="mode" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-600 focus:ring-indigo-600">
+          <select
+            name="mode"
+            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-600 focus:ring-indigo-600"
+          >
             <option value="function" selected={@callback_mode == :function}>
               Function Callbacks (on_success/on_error)
             </option>
@@ -56,11 +60,11 @@ defmodule ExampleWeb.FormTestComponentLive do
 
         <div class="mt-3 text-sm">
           <p class="font-medium text-gray-700">Current mode:</p>
-          <code class="block mt-1 bg-white p-2 rounded"><%= describe_mode(@callback_mode) %></code>
+          <code class="block mt-1 bg-white p-2 rounded">{describe_mode(@callback_mode)}</code>
         </div>
       </div>
-
-      <!-- LiveComponent with dynamic callbacks -->
+      
+    <!-- LiveComponent with dynamic callbacks -->
       <div class="rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
         <%= if @callback_mode == :function do %>
           <.live_component
@@ -101,16 +105,17 @@ defmodule ExampleWeb.FormTestComponentLive do
           </div>
         </div>
       <% end %>
-
-      <!-- Documentation -->
+      
+    <!-- Documentation -->
       <div class="mt-8 rounded-lg bg-gray-50 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">About Callback Patterns</h3>
         <div class="space-y-4 text-sm text-gray-700">
           <div>
             <h4 class="font-semibold">Function Callbacks</h4>
             <p class="mt-1">
-              Provides <code class="bg-white px-1 rounded">on_success</code> and
-              <code class="bg-white px-1 rounded">on_error</code> callbacks that receive
+              Provides <code class="bg-white px-1 rounded">on_success</code>
+              and <code class="bg-white px-1 rounded">on_error</code>
+              callbacks that receive
               the socket and result. Allows direct socket manipulation like navigation and flash messages.
             </p>
           </div>

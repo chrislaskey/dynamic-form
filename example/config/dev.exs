@@ -4,7 +4,8 @@ import Config
 # This enables file watching for the path dependency
 config :phoenix_live_reload,
   dirs: [
-    Path.expand("../../lib", __DIR__)  # Watch the library's lib directory
+    # Watch the library's lib directory
+    Path.expand("../../lib", __DIR__)
   ]
 
 # Configure your database
