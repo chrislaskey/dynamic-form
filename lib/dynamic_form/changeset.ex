@@ -11,6 +11,9 @@ defmodule DynamicForm.Changeset do
   @doc """
   Creates a changeset from a DynamicForm.Instance configuration.
 
+  Only form fields are included in the changeset. Elements (headings, paragraphs, etc.)
+  are filtered out as they don't collect user input.
+
   ## Parameters
 
     * `instance` - The DynamicForm.Instance configuration
@@ -28,13 +31,53 @@ defmodule DynamicForm.Changeset do
       true
   """
   def create_changeset(%Instance{} = instance, params \\ %{}) do
-    types = build_types_map(instance.fields)
-    required_fields = get_required_fields(instance.fields)
+    fields = get_fields(instance.items)
+    types = build_types_map(fields)
+    required_fields = get_required_fields(fields)
 
     {%{}, types}
     |> Ecto.Changeset.cast(params, Map.keys(types))
     |> Ecto.Changeset.validate_required(required_fields)
-    |> apply_custom_validations(instance.fields)
+    |> apply_custom_validations(fields)
+  end
+
+  @doc """
+  Extracts only Field structs from the items list, filtering out Elements.
+
+  Recursively extracts fields from group elements that contain nested items.
+
+  ## Example
+
+      iex> items = [
+      ...>   %DynamicForm.Instance.Element{id: "h1", type: "heading"},
+      ...>   %DynamicForm.Instance.Field{id: "email", name: "email", type: "email"},
+      ...>   %DynamicForm.Instance.Element{
+      ...>     id: "group-1",
+      ...>     type: "group",
+      ...>     items: [
+      ...>       %DynamicForm.Instance.Field{id: "city", name: "city", type: "string"}
+      ...>     ]
+      ...>   }
+      ...> ]
+      iex> DynamicForm.Changeset.get_fields(items)
+      [
+        %DynamicForm.Instance.Field{id: "email", name: "email", type: "email"},
+        %DynamicForm.Instance.Field{id: "city", name: "city", type: "string"}
+      ]
+  """
+  def get_fields(items) when is_list(items) do
+    Enum.flat_map(items, fn item ->
+      case item do
+        %Instance.Field{} = field ->
+          [field]
+
+        %Instance.Element{items: nested_items} when is_list(nested_items) ->
+          get_fields(nested_items)
+
+        %Instance.Element{} ->
+          []
+      end
+    end)
   end
 
   @doc """

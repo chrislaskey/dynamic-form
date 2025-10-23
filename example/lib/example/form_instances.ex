@@ -12,19 +12,33 @@ defmodule Example.FormInstances do
   Returns a contact form instance with various field types.
 
   This form includes:
+  - Elements (heading, paragraph, divider)
   - String field (name)
   - Email field with format validation
   - Select field (subject)
   - Textarea field (message) with length validation
   - Decimal field (priority) with numeric range validation
   - Boolean field (subscribe)
+  - Grouped contact preference fields
   """
   def contact_form do
     %Instance{
       id: "contact-form",
       name: "Contact Form",
       description: "Please fill out this form to get in touch with us.",
-      fields: [
+      items: [
+        %Instance.Element{
+          id: "contact-heading",
+          type: "heading",
+          content: "Contact Information",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Element{
+          id: "contact-intro",
+          type: "paragraph",
+          content: "We'd love to hear from you! Fill out the form below and we'll get back to you as soon as possible.",
+          metadata: %{"class" => "text-gray-600"}
+        },
         %Instance.Field{
           id: "name",
           name: "name",
@@ -33,7 +47,6 @@ defmodule Example.FormInstances do
           placeholder: "John Doe",
           help_text: "Enter your full name as it appears on official documents",
           required: true,
-          position: 1,
           validations: [
             %Instance.Validation{type: "min_length", value: 2}
           ]
@@ -46,10 +59,47 @@ defmodule Example.FormInstances do
           placeholder: "john@example.com",
           help_text: "We'll never share your email with anyone else",
           required: true,
-          position: 2,
           validations: [
             %Instance.Validation{type: "email_format"}
           ]
+        },
+        %Instance.Element{
+          id: "contact-group",
+          type: "group",
+          content: "Contact Preferences",
+          metadata: %{"layout" => "grid-2"},
+          items: [
+            %Instance.Field{
+              id: "phone",
+              name: "phone",
+              type: "string",
+              label: "Phone Number",
+              placeholder: "(555) 123-4567",
+              required: false
+            },
+            %Instance.Field{
+              id: "preferred_contact",
+              name: "preferred_contact",
+              type: "select",
+              label: "Preferred Contact Method",
+              required: false,
+              options: [
+                {"Email", "email"},
+                {"Phone", "phone"},
+                {"Either", "either"}
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "divider-1",
+          type: "divider",
+        },
+        %Instance.Element{
+          id: "inquiry-heading",
+          type: "heading",
+          content: "Your Inquiry",
+          metadata: %{"level" => "h3"}
         },
         %Instance.Field{
           id: "subject",
@@ -58,7 +108,6 @@ defmodule Example.FormInstances do
           label: "Subject",
           help_text: "Choose the topic that best matches your inquiry",
           required: true,
-          position: 3,
           options: [
             {"General Inquiry", "general"},
             {"Technical Support", "support"},
@@ -74,7 +123,6 @@ defmodule Example.FormInstances do
           placeholder: "Tell us how we can help you...",
           help_text: "Please provide as much detail as possible",
           required: true,
-          position: 4,
           validations: [
             %Instance.Validation{type: "min_length", value: 10},
             %Instance.Validation{type: "max_length", value: 1000}
@@ -88,10 +136,13 @@ defmodule Example.FormInstances do
           placeholder: "5",
           help_text: "Rate the urgency of your request from 1 (low) to 10 (high)",
           required: false,
-          position: 5,
           validations: [
             %Instance.Validation{type: "numeric_range", min: 1, max: 10}
           ]
+        },
+        %Instance.Element{
+          id: "divider-2",
+          type: "divider",
         },
         %Instance.Field{
           id: "subscribe",
@@ -100,7 +151,6 @@ defmodule Example.FormInstances do
           label: "Subscribe to newsletter",
           help_text: "Receive updates about new features and announcements",
           required: false,
-          position: 6
         },
         %Instance.Field{
           id: "newsletter_frequency",
@@ -109,7 +159,6 @@ defmodule Example.FormInstances do
           label: "Newsletter Frequency",
           help_text: "How often would you like to receive our newsletter?",
           required: false,
-          position: 7,
           visible_when: %{
             field: "email",
             operator: "valid"
@@ -145,7 +194,19 @@ defmodule Example.FormInstances do
       id: "payment-form",
       name: "Payment Form",
       description: "Complete your payment information below.",
-      fields: [
+      items: [
+        %Instance.Element{
+          id: "payment-heading",
+          type: "heading",
+          content: "Payment Method Selection",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Element{
+          id: "payment-intro",
+          type: "paragraph",
+          content: "Select your preferred payment method and enter the required details below.",
+          metadata: %{"class" => "text-gray-600"}
+        },
         %Instance.Field{
           id: "payment_method",
           name: "payment_method",
@@ -153,12 +214,15 @@ defmodule Example.FormInstances do
           label: "Payment Method",
           help_text: "Choose how you would like to pay",
           required: true,
-          position: 1,
           options: [
             {"Credit Card", "credit_card"},
             {"Bank Transfer", "bank_transfer"},
             {"PayPal", "paypal"}
           ]
+        },
+        %Instance.Element{
+          id: "payment-divider-1",
+          type: "divider",
         },
         # Credit card fields - only visible when payment_method is "credit_card"
         %Instance.Field{
@@ -169,7 +233,6 @@ defmodule Example.FormInstances do
           placeholder: "1234 5678 9012 3456",
           help_text: "Enter your 16-digit card number",
           required: false,
-          position: 2,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -187,7 +250,6 @@ defmodule Example.FormInstances do
           placeholder: "MM/YY",
           help_text: "Card expiration date",
           required: false,
-          position: 3,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -202,7 +264,6 @@ defmodule Example.FormInstances do
           placeholder: "123",
           help_text: "3-digit security code on the back of your card",
           required: false,
-          position: 4,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -222,7 +283,6 @@ defmodule Example.FormInstances do
           placeholder: "1234567890",
           help_text: "Your bank account number",
           required: false,
-          position: 5,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -237,7 +297,6 @@ defmodule Example.FormInstances do
           placeholder: "021000021",
           help_text: "9-digit routing number for your bank",
           required: false,
-          position: 6,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -257,7 +316,6 @@ defmodule Example.FormInstances do
           placeholder: "you@example.com",
           help_text: "Email address associated with your PayPal account",
           required: false,
-          position: 7,
           visible_when: %{
             field: "payment_method",
             operator: "equals",
@@ -266,6 +324,10 @@ defmodule Example.FormInstances do
           validations: [
             %Instance.Validation{type: "email_format"}
           ]
+        },
+        %Instance.Element{
+          id: "payment-divider-2",
+          type: "divider",
         },
         # Amount field - always visible
         %Instance.Field{
@@ -276,7 +338,6 @@ defmodule Example.FormInstances do
           placeholder: "100.00",
           help_text: "Enter the payment amount in USD",
           required: true,
-          position: 8,
           validations: [
             %Instance.Validation{type: "numeric_range", min: 0.01, max: 10000}
           ]
@@ -289,7 +350,297 @@ defmodule Example.FormInstances do
           label: "Save this payment method for future use",
           help_text: "Securely store your payment details",
           required: false,
-          position: 9
+        },
+        %Instance.Element{
+          id: "billing-heading",
+          type: "heading",
+          content: "Billing Information",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Element{
+          id: "billing-address-group",
+          type: "group",
+          content: "Billing Address",
+          metadata: %{"layout" => "grid-2"},
+          items: [
+            %Instance.Field{
+              id: "billing_street",
+              name: "billing_street",
+              type: "string",
+              label: "Street Address",
+              placeholder: "123 Main St",
+              required: true
+            },
+            %Instance.Field{
+              id: "billing_city",
+              name: "billing_city",
+              type: "string",
+              label: "City",
+              placeholder: "San Francisco",
+              required: true
+            },
+            %Instance.Field{
+              id: "billing_state",
+              name: "billing_state",
+              type: "string",
+              label: "State",
+              placeholder: "CA",
+              required: true
+            },
+            %Instance.Field{
+              id: "billing_zip",
+              name: "billing_zip",
+              type: "string",
+              label: "ZIP Code",
+              placeholder: "94102",
+              required: true,
+              validations: [
+                %Instance.Validation{type: "min_length", value: 5},
+                %Instance.Validation{type: "max_length", value: 10}
+              ]
+            }
+          ]
+        }
+      ],
+      backend: %Instance.Backend{
+        module: Example.TestBackend,
+        config: [],
+        name: "Test Backend",
+        description: "Logs form submissions for testing"
+      },
+      metadata: %{
+        created_at: DateTime.utc_now()
+      }
+    }
+  end
+
+  @doc """
+  Returns a comprehensive showcase form demonstrating all DynamicForm features.
+
+  This form demonstrates:
+  - All element types (heading, paragraph, divider, group)
+  - All field types (string, email, textarea, decimal, boolean, select)
+  - Groups with different layouts (grid-2, grid-3, horizontal)
+  - Conditional visibility (equals and valid operators)
+  - Nested groups
+  - Field validations
+  """
+  def showcase_form do
+    %Instance{
+      id: "showcase-form",
+      name: "DynamicForm Feature Showcase",
+      description: "A comprehensive example showcasing all DynamicForm capabilities.",
+      items: [
+        %Instance.Element{
+          id: "intro-heading",
+          type: "heading",
+          content: "Welcome to DynamicForm",
+          metadata: %{"level" => "h2"}
+        },
+        %Instance.Element{
+          id: "intro-paragraph",
+          type: "paragraph",
+          content:
+            "This form demonstrates all the features of the DynamicForm library including elements, groups, conditional visibility, and various field types.",
+          metadata: %{"class" => "text-gray-600 text-lg"}
+        },
+        %Instance.Element{
+          id: "divider-intro",
+          type: "divider",
+        },
+        %Instance.Element{
+          id: "personal-heading",
+          type: "heading",
+          content: "Personal Information",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Element{
+          id: "name-group",
+          type: "group",
+          content: "Full Name",
+          metadata: %{"layout" => "grid-2"},
+          items: [
+            %Instance.Field{
+              id: "first_name",
+              name: "first_name",
+              type: "string",
+              label: "First Name",
+              placeholder: "John",
+              required: true,
+              validations: [
+                %Instance.Validation{type: "min_length", value: 2}
+              ]
+            },
+            %Instance.Field{
+              id: "last_name",
+              name: "last_name",
+              type: "string",
+              label: "Last Name",
+              placeholder: "Doe",
+              required: true,
+              validations: [
+                %Instance.Validation{type: "min_length", value: 2}
+              ]
+            }
+          ]
+        },
+        %Instance.Field{
+          id: "email",
+          name: "email",
+          type: "email",
+          label: "Email Address",
+          placeholder: "john.doe@example.com",
+          required: true,
+          validations: [
+            %Instance.Validation{type: "email_format"}
+          ]
+        },
+        %Instance.Element{
+          id: "email-prefs-group",
+          type: "group",
+          content: "Email Preferences",
+          metadata: %{"layout" => "horizontal"},
+          visible_when: %{
+            field: "email",
+            operator: "valid"
+          },
+          items: [
+            %Instance.Field{
+              id: "email_notifications",
+              name: "email_notifications",
+              type: "boolean",
+              label: "Receive email notifications"
+            },
+            %Instance.Field{
+              id: "email_frequency",
+              name: "email_frequency",
+              type: "select",
+              label: "Frequency",
+              options: [
+                {"Daily", "daily"},
+                {"Weekly", "weekly"},
+                {"Monthly", "monthly"}
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "divider-1",
+          type: "divider",
+        },
+        %Instance.Element{
+          id: "address-heading",
+          type: "heading",
+          content: "Address",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Element{
+          id: "address-group",
+          type: "group",
+          metadata: %{"layout" => "vertical"},
+          items: [
+            %Instance.Field{
+              id: "street",
+              name: "street",
+              type: "string",
+              label: "Street Address",
+              placeholder: "123 Main St",
+              required: true
+            },
+            %Instance.Element{
+              id: "city-state-zip-group",
+              type: "group",
+              metadata: %{"layout" => "grid-3"},
+              items: [
+                %Instance.Field{
+                  id: "city",
+                  name: "city",
+                  type: "string",
+                  label: "City",
+                  placeholder: "San Francisco",
+                  required: true
+                },
+                %Instance.Field{
+                  id: "state",
+                  name: "state",
+                  type: "string",
+                  label: "State",
+                  placeholder: "CA",
+                  required: true,
+                  validations: [
+                    %Instance.Validation{type: "max_length", value: 2}
+                  ]
+                },
+                %Instance.Field{
+                  id: "zip",
+                  name: "zip",
+                  type: "string",
+                  label: "ZIP",
+                  placeholder: "94102",
+                  required: true,
+                  validations: [
+                    %Instance.Validation{type: "min_length", value: 5},
+                    %Instance.Validation{type: "max_length", value: 10}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "divider-2",
+          type: "divider",
+        },
+        %Instance.Element{
+          id: "feedback-heading",
+          type: "heading",
+          content: "Feedback",
+          metadata: %{"level" => "h3"}
+        },
+        %Instance.Field{
+          id: "category",
+          name: "category",
+          type: "select",
+          label: "Feedback Category",
+          required: true,
+          options: [
+            {"Bug Report", "bug"},
+            {"Feature Request", "feature"},
+            {"General Feedback", "general"}
+          ]
+        },
+        %Instance.Field{
+          id: "rating",
+          name: "rating",
+          type: "decimal",
+          label: "Rating (1-10)",
+          placeholder: "8",
+          required: true,
+          validations: [
+            %Instance.Validation{type: "numeric_range", min: 1, max: 10}
+          ]
+        },
+        %Instance.Field{
+          id: "comments",
+          name: "comments",
+          type: "textarea",
+          label: "Comments",
+          placeholder: "Tell us more...",
+          required: true,
+          validations: [
+            %Instance.Validation{type: "min_length", value: 10},
+            %Instance.Validation{type: "max_length", value: 500}
+          ]
+        },
+        %Instance.Element{
+          id: "thank-you",
+          type: "paragraph",
+          content: "Thank you for providing your feedback!",
+          metadata: %{"class" => "text-green-600 font-semibold"},
+          visible_when: %{
+            field: "comments",
+            operator: "valid"
+          }
         }
       ],
       backend: %Instance.Backend{

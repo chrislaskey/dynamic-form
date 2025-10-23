@@ -2,8 +2,8 @@ defmodule DynamicForm.Instance do
   @moduledoc """
   Configuration struct that defines the complete form structure, including backend configuration.
 
-  An Instance represents a complete form definition with all its fields, validations, and backend
-  submission configuration.
+  An Instance represents a complete form definition with all its items (fields and elements),
+  validations, and backend submission configuration.
 
   ## Example
 
@@ -11,7 +11,12 @@ defmodule DynamicForm.Instance do
       ...>   id: "contact-form",
       ...>   name: "Contact Form",
       ...>   description: "Get in touch with us",
-      ...>   fields: [
+      ...>   items: [
+      ...>     %DynamicForm.Instance.Element{
+      ...>       id: "section-heading",
+      ...>       type: "heading",
+      ...>       content: "Contact Information"
+      ...>     },
       ...>     %DynamicForm.Instance.Field{
       ...>       id: "email",
       ...>       name: "email",
@@ -27,12 +32,12 @@ defmodule DynamicForm.Instance do
       ...> }
   """
 
-  @enforce_keys [:id, :name, :fields, :backend]
+  @enforce_keys [:id, :name, :items, :backend]
   defstruct [
     :id,
     :name,
     :description,
-    :fields,
+    :items,
     :backend,
     :metadata,
     inserted_at: nil,
@@ -43,7 +48,7 @@ defmodule DynamicForm.Instance do
           id: String.t(),
           name: String.t(),
           description: String.t() | nil,
-          fields: [Field.t()],
+          items: [Field.t() | Element.t()],
           backend: Backend.t(),
           metadata: map(),
           inserted_at: DateTime.t() | nil,
@@ -103,10 +108,10 @@ defmodule DynamicForm.Instance do
       :default_value,
       :options,
       :validations,
-      :position,
       :required,
       :visible_when,
-      :metadata
+      :metadata,
+      __type__: "Field"
     ]
 
     @type condition :: %{
@@ -125,10 +130,115 @@ defmodule DynamicForm.Instance do
             default_value: any(),
             options: list() | nil,
             validations: [Validation.t()] | nil,
-            position: integer() | nil,
             required: boolean() | nil,
             visible_when: condition() | nil,
-            metadata: map() | nil
+            metadata: map() | nil,
+            __type__: String.t()
+          }
+  end
+
+  defmodule Element do
+    @moduledoc """
+    Represents a non-input element in a form, such as headings, paragraphs, dividers, or groups.
+
+    Elements are used to add structure and information to forms without collecting user input.
+    They support conditional visibility just like fields.
+
+    ## Supported Types
+
+    - `"heading"` - Section heading (h1-h6)
+    - `"paragraph"` - Text paragraph for instructions or information
+    - `"divider"` - Horizontal line to separate sections
+    - `"group"` - Container for grouping fields together with layout options
+
+    ## Examples
+
+        # Heading element
+        %Element{
+          id: "section-1",
+          type: "heading",
+          content: "Personal Information",
+          position: 1,
+          metadata: %{"level" => "h2"}
+        }
+
+        # Paragraph element
+        %Element{
+          id: "privacy-notice",
+          type: "paragraph",
+          content: "We take your privacy seriously. Your data will never be shared.",
+          position: 2,
+          metadata: %{"class" => "text-gray-600"}
+        }
+
+        # Divider element
+        %Element{
+          id: "divider-1",
+          type: "divider",
+          position: 3
+        }
+
+        # Group element with nested fields
+        %Element{
+          id: "address-group",
+          type: "group",
+          content: "Shipping Address",
+          position: 4,
+          metadata: %{"layout" => "grid-2"},
+          items: [
+            %Field{
+              id: "street",
+              name: "street",
+              type: "string",
+              label: "Street"
+            },
+            %Field{
+              id: "city",
+              name: "city",
+              type: "string",
+              label: "City"
+            }
+          ]
+        }
+
+        # Conditional element (only show when terms accepted)
+        %Element{
+          id: "thank-you-message",
+          type: "paragraph",
+          content: "Thank you for accepting our terms!",
+          visible_when: %{
+            field: "accept_terms",
+            operator: "equals",
+            value: true
+          }
+        }
+    """
+
+    @enforce_keys [:id, :type]
+    defstruct [
+      :id,
+      :type,
+      :content,
+      :items,
+      :visible_when,
+      :metadata,
+      __type__: "Element"
+    ]
+
+    @type condition :: %{
+            field: String.t(),
+            operator: String.t(),
+            value: any()
+          }
+
+    @type t :: %__MODULE__{
+            id: String.t(),
+            type: String.t(),
+            content: String.t() | nil,
+            items: [Field.t() | t()] | nil,
+            visible_when: condition() | nil,
+            metadata: map() | nil,
+            __type__: String.t()
           }
   end
 

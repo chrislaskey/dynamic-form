@@ -48,8 +48,8 @@ defmodule DynamicForm.Renderer do
       phx-change={@phx_change}
       phx-target={@target}
     >
-      <%= for field <- visible_fields(@instance.fields, @form) do %>
-        <%= render_field(field, f, disabled: @disabled) %>
+      <%= for item <- visible_items(@instance.items, @form) do %>
+        <%= render_item(item, f, disabled: @disabled) %>
       <% end %>
 
       <div class="mt-6 flex items-center justify-end gap-x-6">
@@ -69,18 +69,23 @@ defmodule DynamicForm.Renderer do
     """
   end
 
-  # Filter fields based on visibility conditions
-  defp visible_fields(fields, form) do
-    Enum.filter(fields, fn field ->
-      should_display_field?(field, form)
+  # Filter items (fields and elements) based on visibility conditions
+  defp visible_items(items, form) do
+    Enum.filter(items, fn item ->
+      should_display_item?(item, form)
     end)
   end
 
-  # Field with no visibility condition is always visible
-  defp should_display_field?(%Instance.Field{visible_when: nil}, _form), do: true
+  # Item with no visibility condition is always visible
+  defp should_display_item?(%Instance.Field{visible_when: nil}, _form), do: true
+  defp should_display_item?(%Instance.Element{visible_when: nil}, _form), do: true
 
-  # Field with visibility condition - check if condition is met
-  defp should_display_field?(%Instance.Field{visible_when: condition}, form) do
+  # Item with visibility condition - check if condition is met
+  defp should_display_item?(%Instance.Field{visible_when: condition}, form) do
+    evaluate_condition(condition, form)
+  end
+
+  defp should_display_item?(%Instance.Element{visible_when: condition}, form) do
     evaluate_condition(condition, form)
   end
 
@@ -111,6 +116,129 @@ defmodule DynamicForm.Renderer do
     has_value and has_no_errors
   rescue
     ArgumentError -> false
+  end
+
+  # Dispatch to appropriate renderer based on item type
+  defp render_item(%Instance.Field{} = field, form, opts) do
+    render_field(field, form, opts)
+  end
+
+  defp render_item(%Instance.Element{} = element, form, opts) do
+    render_element(element, form, opts)
+  end
+
+  # Render element types
+  defp render_element(%Instance.Element{type: "heading"} = element, _form, _opts) do
+    level = get_in(element.metadata || %{}, ["level"]) || "h2"
+    content = element.content || ""
+
+    assigns = %{level: level, content: content, element: element}
+
+    ~H"""
+    <div class="mb-6">
+      <%= case @level do %>
+        <% "h1" -> %>
+          <h1 class="text-3xl font-bold text-gray-900"><%= @content %></h1>
+        <% "h2" -> %>
+          <h2 class="text-2xl font-semibold text-gray-900"><%= @content %></h2>
+        <% "h3" -> %>
+          <h3 class="text-xl font-semibold text-gray-900"><%= @content %></h3>
+        <% "h4" -> %>
+          <h4 class="text-lg font-semibold text-gray-900"><%= @content %></h4>
+        <% "h5" -> %>
+          <h5 class="text-base font-semibold text-gray-900"><%= @content %></h5>
+        <% "h6" -> %>
+          <h6 class="text-sm font-semibold text-gray-900"><%= @content %></h6>
+        <% _ -> %>
+          <h2 class="text-2xl font-semibold text-gray-900"><%= @content %></h2>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp render_element(%Instance.Element{type: "paragraph"} = element, _form, _opts) do
+    content = element.content || ""
+    custom_class = get_in(element.metadata || %{}, ["class"]) || "text-gray-700"
+
+    assigns = %{content: content, custom_class: custom_class}
+
+    ~H"""
+    <div class="mb-4">
+      <p class={@custom_class}><%= @content %></p>
+    </div>
+    """
+  end
+
+  defp render_element(%Instance.Element{type: "divider"}, _form, _opts) do
+    assigns = %{}
+
+    ~H"""
+    <div class="my-6">
+      <hr class="border-gray-300" />
+    </div>
+    """
+  end
+
+  defp render_element(%Instance.Element{type: "group"} = element, form, opts) do
+    layout = get_in(element.metadata || %{}, ["layout"]) || "horizontal"
+    content = element.content
+    items = element.items || []
+
+    # Determine grid/layout classes
+    layout_class =
+      case layout do
+        "horizontal" -> "flex flex-row gap-4"
+        "grid-2" -> "grid grid-cols-1 md:grid-cols-2 gap-4"
+        "grid-3" -> "grid grid-cols-1 md:grid-cols-3 gap-4"
+        "grid-4" -> "grid grid-cols-1 md:grid-cols-4 gap-4"
+        "vertical" -> "flex flex-col gap-4"
+        _ -> "flex flex-row gap-4"
+      end
+
+    assigns = %{
+      element: element,
+      content: content,
+      layout_class: layout_class,
+      items: items,
+      form: form,
+      opts: opts
+    }
+
+    ~H"""
+    <div class="mb-6 rounded-lg border border-gray-200 p-4">
+      <%= if @content do %>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4"><%= @content %></h3>
+      <% end %>
+      <div class={@layout_class}>
+        <%= for item <- @items do %>
+          <%= case item do %>
+            <% %Instance.Field{} = field -> %>
+              <%= render_field(field, @form, @opts) %>
+            <% %Instance.Element{} = nested_element -> %>
+              <%= render_element(nested_element, @form, @opts) %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  # Fallback for unknown element types
+  defp render_element(element, _form, _opts) do
+    assigns = %{element: element}
+
+    ~H"""
+    <div class="mb-4 rounded-md bg-yellow-50 p-4">
+      <div class="flex">
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-yellow-800">Unknown element type</h3>
+          <div class="mt-2 text-sm text-yellow-700">
+            <p>Element "<%= @element.id %>" has unsupported type: <%= @element.type %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
   end
 
   # Render a string/text input field

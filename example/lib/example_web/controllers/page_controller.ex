@@ -7,7 +7,7 @@ defmodule ExampleWeb.PageController do
       id: "test-1",
       name: "Test Form",
       description: "A test form to verify library loading",
-      fields: [],
+      items: [],
       backend: %DynamicForm.Instance.Backend{
         module: Example.TestBackend,
         config: []

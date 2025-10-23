@@ -21,6 +21,7 @@ defmodule ExampleWeb.Router do
     live "/form-test", FormTestLive
     live "/form-test-component", FormTestComponentLive
     live "/payment-form", PaymentFormLive
+    live "/showcase-form", ShowcaseFormLive
     live "/builder-mockups", BuilderMockupsLive
   end
 
