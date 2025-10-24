@@ -22,6 +22,7 @@ defmodule DynamicForm.MixProject do
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.0"},
       {:ecto, "~> 3.0"},
+      {:gettext, "~> 0.26"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end

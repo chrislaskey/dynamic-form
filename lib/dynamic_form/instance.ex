@@ -32,7 +32,7 @@ defmodule DynamicForm.Instance do
       ...> }
   """
 
-  @enforce_keys [:id, :name, :items, :backend]
+  @enforce_keys [:id, :name, :items]
   defstruct [
     :id,
     :name,

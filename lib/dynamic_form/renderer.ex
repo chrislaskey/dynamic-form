@@ -19,6 +19,7 @@ defmodule DynamicForm.Renderer do
 
   use Phoenix.Component
 
+  alias DynamicForm.CoreComponents
   alias DynamicForm.Instance
 
   attr(:instance, Instance, required: true, doc: "The form instance configuration")
@@ -246,37 +247,35 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     field_atom = String.to_atom(field.name)
 
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
-      disabled: disabled
+      disabled: disabled,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <label for={@field.name} class="block text-sm font-medium leading-6 text-gray-900">
-        <%= @field.label || String.capitalize(@field.name) %>
-        <%= if @field.required do %>
-          <span class="text-red-500">*</span>
-        <% end %>
-      </label>
-      <div class="mt-2">
-        <input
-          type="text"
-          name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-          id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-          value={Phoenix.HTML.Form.input_value(@form, @field_atom)}
-          placeholder={@field.placeholder}
-          disabled={@disabled}
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-        />
-      </div>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="text"
+        label={@label}
+        placeholder={@field.placeholder}
+        disabled={@disabled}
+      />
       <%= if @field.help_text do %>
         <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
-      <% end %>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
       <% end %>
     </div>
     """
@@ -287,37 +286,35 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     field_atom = String.to_atom(field.name)
 
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
-      disabled: disabled
+      disabled: disabled,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <label for={@field.name} class="block text-sm font-medium leading-6 text-gray-900">
-        <%= @field.label || String.capitalize(@field.name) %>
-        <%= if @field.required do %>
-          <span class="text-red-500">*</span>
-        <% end %>
-      </label>
-      <div class="mt-2">
-        <input
-          type="email"
-          name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-          id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-          value={Phoenix.HTML.Form.input_value(@form, @field_atom)}
-          placeholder={@field.placeholder}
-          disabled={@disabled}
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-        />
-      </div>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="email"
+        label={@label}
+        placeholder={@field.placeholder}
+        disabled={@disabled}
+      />
       <%= if @field.help_text do %>
         <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
-      <% end %>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
       <% end %>
     </div>
     """
@@ -328,36 +325,36 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     field_atom = String.to_atom(field.name)
 
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
-      disabled: disabled
+      disabled: disabled,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <label for={@field.name} class="block text-sm font-medium leading-6 text-gray-900">
-        <%= @field.label || String.capitalize(@field.name) %>
-        <%= if @field.required do %>
-          <span class="text-red-500">*</span>
-        <% end %>
-      </label>
-      <div class="mt-2">
-        <textarea
-          name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-          id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-          placeholder={@field.placeholder}
-          disabled={@disabled}
-          rows="4"
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-        ><%= Phoenix.HTML.Form.input_value(@form, @field_atom) %></textarea>
-      </div>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="textarea"
+        label={@label}
+        placeholder={@field.placeholder}
+        disabled={@disabled}
+        rows="4"
+      />
       <%= if @field.help_text do %>
         <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
-      <% end %>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
       <% end %>
     </div>
     """
@@ -368,38 +365,36 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     field_atom = String.to_atom(field.name)
 
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
-      disabled: disabled
+      disabled: disabled,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <label for={@field.name} class="block text-sm font-medium leading-6 text-gray-900">
-        <%= @field.label || String.capitalize(@field.name) %>
-        <%= if @field.required do %>
-          <span class="text-red-500">*</span>
-        <% end %>
-      </label>
-      <div class="mt-2">
-        <input
-          type="number"
-          step="0.01"
-          name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-          id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-          value={Phoenix.HTML.Form.input_value(@form, @field_atom)}
-          placeholder={@field.placeholder}
-          disabled={@disabled}
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-        />
-      </div>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="number"
+        label={@label}
+        placeholder={@field.placeholder}
+        disabled={@disabled}
+        step="0.01"
+      />
       <%= if @field.help_text do %>
         <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
-      <% end %>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
       <% end %>
     </div>
     """
@@ -410,39 +405,32 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     field_atom = String.to_atom(field.name)
 
+    # For checkboxes, the label is displayed inline, so include help_text if present
+    label =
+      if field.help_text do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)}<br><span class=\"text-gray-500\">#{field.help_text}</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
-      disabled: disabled
+      disabled: disabled,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <div class="relative flex gap-x-3">
-        <div class="flex h-6 items-center">
-          <input
-            type="checkbox"
-            name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-            id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-            value="true"
-            checked={Phoenix.HTML.Form.input_value(@form, @field_atom) == true}
-            disabled={@disabled}
-            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:opacity-50"
-          />
-        </div>
-        <div class="text-sm leading-6">
-          <label for={@field.name} class="font-medium text-gray-900">
-            <%= @field.label || String.capitalize(@field.name) %>
-          </label>
-          <%= if @field.help_text do %>
-            <p class="text-gray-500"><%= @field.help_text %></p>
-          <% end %>
-        </div>
-      </div>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
-      <% end %>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="checkbox"
+        label={@label}
+        disabled={@disabled}
+      />
     </div>
     """
   end
@@ -453,45 +441,37 @@ defmodule DynamicForm.Renderer do
     field_atom = String.to_atom(field.name)
     options = field.options || []
 
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
     assigns = %{
       field: field,
       form: form,
       field_atom: field_atom,
       disabled: disabled,
-      options: options
+      options: options,
+      label: label
     }
 
     ~H"""
     <div class="mb-4">
-      <label for={@field.name} class="block text-sm font-medium leading-6 text-gray-900">
-        <%= @field.label || String.capitalize(@field.name) %>
-        <%= if @field.required do %>
-          <span class="text-red-500">*</span>
-        <% end %>
-      </label>
-      <div class="mt-2">
-        <select
-          name={Phoenix.HTML.Form.input_name(@form, @field_atom)}
-          id={Phoenix.HTML.Form.input_id(@form, @field_atom)}
-          disabled={@disabled}
-          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:opacity-50"
-        >
-          <option value="">Select an option...</option>
-          <%= for {label, value} <- @options do %>
-            <option
-              value={value}
-              selected={Phoenix.HTML.Form.input_value(@form, @field_atom) == value}
-            >
-              <%= label %>
-            </option>
-          <% end %>
-        </select>
-      </div>
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="select"
+        label={@label}
+        options={@options}
+        prompt="Select an option..."
+        disabled={@disabled}
+      />
       <%= if @field.help_text do %>
         <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
-      <% end %>
-      <%= if error = Keyword.get(@form.errors || [], @field_atom) do %>
-        <p class="mt-2 text-sm text-red-600"><%= translate_error(error) %></p>
       <% end %>
     </div>
     """
@@ -514,13 +494,4 @@ defmodule DynamicForm.Renderer do
     </div>
     """
   end
-
-  # Helper function to translate errors
-  defp translate_error({msg, opts}) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(value))
-    end)
-  end
-
-  defp translate_error(msg) when is_binary(msg), do: msg
 end
