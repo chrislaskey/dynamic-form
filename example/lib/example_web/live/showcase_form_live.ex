@@ -103,15 +103,17 @@ defmodule ExampleWeb.ShowcaseFormLive do
         <div class="text-sm text-gray-800">
           <p class="mb-2">
             <span class="font-semibold">Total items:</span>
-            <%= length(@form_instance.items) %>
+            {length(@form_instance.items)}
           </p>
           <p class="mb-2">
             <span class="font-semibold">Elements:</span>
-            <%= Enum.count(@form_instance.items, fn item -> match?(%DynamicForm.Instance.Element{}, item) end) %>
+            {Enum.count(@form_instance.items, fn item ->
+              match?(%DynamicForm.Instance.Element{}, item)
+            end)}
           </p>
           <p class="mb-2">
             <span class="font-semibold">Fields (including nested):</span>
-            <%= length(DynamicForm.Changeset.get_fields(@form_instance.items)) %>
+            {length(DynamicForm.Changeset.get_fields(@form_instance.items))}
           </p>
           <details class="mt-4">
             <summary class="cursor-pointer font-semibold text-gray-700 hover:text-gray-900">

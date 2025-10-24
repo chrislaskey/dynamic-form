@@ -36,7 +36,7 @@ defmodule DynamicForm.Changeset do
     required_fields = get_required_fields(fields)
 
     {%{}, types}
-    |> Ecto.Changeset.cast(params, Map.keys(types))
+    |> Ecto.Changeset.cast(params, Map.keys(types), empty_values: [])
     |> Ecto.Changeset.validate_required(required_fields)
     |> apply_custom_validations(fields)
   end

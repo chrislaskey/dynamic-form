@@ -18,6 +18,7 @@ defmodule ExampleWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/render", RenderLive
     live "/form-test", FormTestLive
     live "/form-test-component", FormTestComponentLive
     live "/payment-form", PaymentFormLive

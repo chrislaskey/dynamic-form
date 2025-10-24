@@ -9,14 +9,10 @@ defmodule Example.TestBackend do
   require Logger
 
   @impl DynamicForm.Backend
-  def submit(changeset, _config) do
-    if changeset.valid? do
-      form_data = Ecto.Changeset.apply_changes(changeset)
-      Logger.info("Form submitted successfully: #{inspect(form_data)}")
-      {:ok, %{message: "Form submitted successfully!", data: form_data}}
-    else
-      {:error, %{message: "Form validation failed", errors: changeset.errors}}
-    end
+  def submit(data, _options) do
+    Logger.info("Form submitted successfully: #{inspect(data)}")
+
+    {:ok, %{message: "Form submitted successfully!", data: data}}
   end
 
   @impl DynamicForm.Backend

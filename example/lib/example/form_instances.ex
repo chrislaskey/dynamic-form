@@ -36,7 +36,8 @@ defmodule Example.FormInstances do
         %Instance.Element{
           id: "contact-intro",
           type: "paragraph",
-          content: "We'd love to hear from you! Fill out the form below and we'll get back to you as soon as possible.",
+          content:
+            "We'd love to hear from you! Fill out the form below and we'll get back to you as soon as possible.",
           metadata: %{"class" => "text-gray-600"}
         },
         %Instance.Field{
@@ -93,7 +94,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "divider-1",
-          type: "divider",
+          type: "divider"
         },
         %Instance.Element{
           id: "inquiry-heading",
@@ -142,7 +143,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "divider-2",
-          type: "divider",
+          type: "divider"
         },
         %Instance.Field{
           id: "subscribe",
@@ -150,7 +151,7 @@ defmodule Example.FormInstances do
           type: "boolean",
           label: "Subscribe to newsletter",
           help_text: "Receive updates about new features and announcements",
-          required: false,
+          required: false
         },
         %Instance.Field{
           id: "newsletter_frequency",
@@ -222,7 +223,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "payment-divider-1",
-          type: "divider",
+          type: "divider"
         },
         # Credit card fields - only visible when payment_method is "credit_card"
         %Instance.Field{
@@ -327,7 +328,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "payment-divider-2",
-          type: "divider",
+          type: "divider"
         },
         # Amount field - always visible
         %Instance.Field{
@@ -349,7 +350,7 @@ defmodule Example.FormInstances do
           type: "boolean",
           label: "Save this payment method for future use",
           help_text: "Securely store your payment details",
-          required: false,
+          required: false
         },
         %Instance.Element{
           id: "billing-heading",
@@ -446,7 +447,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "divider-intro",
-          type: "divider",
+          type: "divider"
         },
         %Instance.Element{
           id: "personal-heading",
@@ -526,7 +527,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "divider-1",
-          type: "divider",
+          type: "divider"
         },
         %Instance.Element{
           id: "address-heading",
@@ -589,7 +590,7 @@ defmodule Example.FormInstances do
         },
         %Instance.Element{
           id: "divider-2",
-          type: "divider",
+          type: "divider"
         },
         %Instance.Element{
           id: "feedback-heading",

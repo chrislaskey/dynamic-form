@@ -3,7 +3,7 @@ defmodule DynamicForm.RendererLive do
   A LiveComponent version of the DynamicForm renderer with automatic state management.
 
   This component handles form state, validation, and backend submission automatically,
-  offering three configurable callback patterns:
+  communicating with the parent LiveView via message passing.
 
   ## Attributes
 
@@ -18,12 +18,12 @@ defmodule DynamicForm.RendererLive do
     * `:form_name` - Form namespace for params (string, default: `"dynamic_form"`)
     * `:submit_text` - Submit button text (string, default: `nil`)
     * `:send_messages` - Whether to send messages to parent LiveView (boolean, default: `false`)
-    * `:on_success` - Success callback function `(socket, result -> socket)` (function, default: `nil`)
-    * `:on_error` - Error callback function `(socket, error -> socket)` (function, default: `nil`)
 
-  ## Pattern A: Message Passing
+  ## Usage
 
-  Component sends messages to parent LiveView:
+  ### Basic Usage with Message Passing
+
+  Component sends messages to parent LiveView on form submission:
 
       <.live_component
         module={DynamicForm.RendererLive}
@@ -36,25 +36,11 @@ defmodule DynamicForm.RendererLive do
         {:noreply, put_flash(socket, :info, result.message)}
       end
 
-  ## Pattern B: Function Callbacks
-
-  Direct function calls with socket operations:
-
-      <.live_component
-        module={DynamicForm.RendererLive}
-        id="contact-form"
-        instance={@form_instance}
-        on_success={&handle_success/2}
-        on_error={&handle_error/2}
-      />
-
-      defp handle_success(socket, result) do
-        socket
-        |> put_flash(:info, "Success!")
-        |> push_navigate(to: ~p"/thank-you")
+      def handle_info({:dynamic_form_error, _id, error}, socket) do
+        {:noreply, put_flash(socket, :error, error.message)}
       end
 
-  ## Pattern C: No Callbacks
+  ### No Messages (Self-Contained)
 
   Component handles everything internally:
 
@@ -64,9 +50,9 @@ defmodule DynamicForm.RendererLive do
         instance={@form_instance}
       />
 
-  ## Edit Mode
+  ### Edit Mode
 
-  To pre-populate the form with existing data:
+  Pre-populate the form with existing data:
 
       <.live_component
         module={DynamicForm.RendererLive}
@@ -76,6 +62,18 @@ defmodule DynamicForm.RendererLive do
         form_name="user_profile"
         send_messages={true}
       />
+
+  ## Messages
+
+  When `send_messages` is `true`, the component sends these messages to the parent LiveView:
+
+    * `{:dynamic_form_success, component_id, result}` - Sent when form submission succeeds
+      - `component_id` - The component's ID
+      - `result` - Map containing `:message`, `:changeset`, and `:data` from the backend
+
+    * `{:dynamic_form_error, component_id, error}` - Sent when form submission fails
+      - `component_id` - The component's ID
+      - `error` - Map containing `:message` and any other error details from the backend
   """
 
   use Phoenix.LiveComponent
@@ -89,8 +87,8 @@ defmodule DynamicForm.RendererLive do
   @impl true
   def update(assigns, socket) do
     form_name = Map.get(assigns, :form_name, "dynamic_form")
-    params = Map.get(assigns, :params, %{})
-    changeset = Changeset.create_changeset(assigns.instance, params)
+    initial_params = Map.get(assigns, :params, %{})
+    changeset = Changeset.create_changeset(assigns.instance, initial_params)
     form = to_form(changeset, as: form_name)
 
     {:ok,
@@ -99,6 +97,7 @@ defmodule DynamicForm.RendererLive do
      |> assign(:changeset, changeset)
      |> assign(:form, form)
      |> assign(:form_name, form_name)
+     |> assign(:initial_params, initial_params)
      |> assign(:submitting, false)}
   end
 
@@ -154,7 +153,11 @@ defmodule DynamicForm.RendererLive do
       backend_module = instance.backend.module
       backend_config = instance.backend.config
 
-      case backend_module.submit(changeset, backend_config) do
+      changeset_data = Ecto.Changeset.apply_changes(changeset)
+      initial_data = socket.assigns.initial_params
+      data = merge_data(initial_data, changeset_data)
+
+      case backend_module.submit(data, config: backend_config) do
         {:ok, result} ->
           socket = handle_success(socket, result)
           {:noreply, assign(socket, :submitting, false)}
@@ -174,16 +177,36 @@ defmodule DynamicForm.RendererLive do
     end
   end
 
-  defp handle_success(socket, result) do
-    # Pattern B: Function callback
-    socket =
-      if callback = socket.assigns[:on_success] do
-        callback.(socket, result)
-      else
-        socket
-      end
+  # Helpers - Data
 
-    # Pattern A: Message passing
+  defp merge_data(initial_data, changeset_data) do
+    initial = recursively_convert_to_string_keys(initial_data)
+    changeset = recursively_convert_to_string_keys(changeset_data)
+
+    Map.merge(initial, changeset)
+  end
+
+  defp recursively_convert_to_string_keys(%Decimal{} = value), do: value
+
+  defp recursively_convert_to_string_keys(map) when is_map(map) do
+    Map.new(map, fn {key, value} ->
+      string_key = to_string(key)
+      converted_value = recursively_convert_to_string_keys(value)
+
+      {string_key, converted_value}
+    end)
+  end
+
+  defp recursively_convert_to_string_keys(list) when is_list(list) do
+    Enum.map(list, &recursively_convert_to_string_keys/1)
+  end
+
+  defp recursively_convert_to_string_keys(value), do: value
+
+  # Helpers - Handlers
+
+  defp handle_success(socket, result) do
+    # Send message to parent LiveView if requested
     if socket.assigns[:send_messages] do
       send(self(), {:dynamic_form_success, socket.assigns.id, result})
     end
@@ -192,15 +215,7 @@ defmodule DynamicForm.RendererLive do
   end
 
   defp handle_error(socket, error) do
-    # Pattern B: Function callback
-    socket =
-      if callback = socket.assigns[:on_error] do
-        callback.(socket, error)
-      else
-        socket
-      end
-
-    # Pattern A: Message passing
+    # Send message to parent LiveView if requested
     if socket.assigns[:send_messages] do
       send(self(), {:dynamic_form_error, socket.assigns.id, error})
     end
