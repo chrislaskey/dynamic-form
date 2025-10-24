@@ -244,7 +244,8 @@ defmodule DynamicForm.Renderer do
 
   # Render a string/text input field
   defp render_field(%Instance.Field{type: "string"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
 
     # Build label with required indicator
@@ -283,7 +284,8 @@ defmodule DynamicForm.Renderer do
 
   # Render an email input field
   defp render_field(%Instance.Field{type: "email"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
 
     # Build label with required indicator
@@ -322,7 +324,8 @@ defmodule DynamicForm.Renderer do
 
   # Render a textarea field
   defp render_field(%Instance.Field{type: "textarea"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
 
     # Build label with required indicator
@@ -362,7 +365,8 @@ defmodule DynamicForm.Renderer do
 
   # Render a decimal/number input field
   defp render_field(%Instance.Field{type: "decimal"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
 
     # Build label with required indicator
@@ -402,7 +406,8 @@ defmodule DynamicForm.Renderer do
 
   # Render a boolean/checkbox field
   defp render_field(%Instance.Field{type: "boolean"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
 
     # For checkboxes, the label is displayed inline, so include help_text if present
@@ -437,7 +442,8 @@ defmodule DynamicForm.Renderer do
 
   # Render a select/dropdown field
   defp render_field(%Instance.Field{type: "select"} = field, form, opts) do
-    disabled = Keyword.get(opts, :disabled, false)
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
     field_atom = String.to_atom(field.name)
     options = field.options || []
 

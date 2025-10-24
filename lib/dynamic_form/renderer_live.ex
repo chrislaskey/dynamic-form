@@ -63,6 +63,16 @@ defmodule DynamicForm.RendererLive do
         send_messages={true}
       />
 
+  ### Disabled Fields
+
+  Fields can be marked as `disabled: true` in the form instance configuration.
+  Disabled fields are displayed but cannot be edited by the user.
+
+  **Important**: Disabled HTML fields are not submitted by browsers, so their values
+  are automatically preserved by merging the initial `:params` with form submissions.
+  This ensures disabled field values remain in the changeset throughout validation
+  and submission.
+
   ## Messages
 
   When `send_messages` is `true`, the component sends these messages to the parent LiveView:
@@ -122,10 +132,11 @@ defmodule DynamicForm.RendererLive do
   @impl true
   def handle_event("validate", params, socket) do
     form_params = Map.get(params, socket.assigns.form_name, %{})
+    merged_params = merge_data(socket.assigns.initial_params, form_params)
 
     changeset =
       socket.assigns.instance
-      |> Changeset.create_changeset(form_params)
+      |> Changeset.create_changeset(merged_params)
       |> Map.put(:action, socket.assigns.changeset.action)
 
     form = to_form(changeset, as: socket.assigns.form_name)
@@ -139,25 +150,25 @@ defmodule DynamicForm.RendererLive do
   @impl true
   def handle_event("submit", params, socket) do
     form_params = Map.get(params, socket.assigns.form_name, %{})
+    merged_params = merge_data(socket.assigns.initial_params, form_params)
 
     changeset =
       socket.assigns.instance
-      |> Changeset.create_changeset(form_params)
+      |> Changeset.create_changeset(merged_params)
       |> Map.put(:action, :updated)
 
     if changeset.valid? do
-      socket = assign(socket, :submitting, true)
+      data = Ecto.Changeset.apply_changes(changeset)
 
       # Submit via backend
       instance = socket.assigns.instance
       backend_module = instance.backend.module
+      backend_function = instance.backend.function
       backend_config = instance.backend.config
 
-      changeset_data = Ecto.Changeset.apply_changes(changeset)
-      initial_data = socket.assigns.initial_params
-      data = merge_data(initial_data, changeset_data)
+      socket = assign(socket, :submitting, true)
 
-      case backend_module.submit(data, config: backend_config) do
+      case apply(backend_module, backend_function, [data, [config: backend_config]]) do
         {:ok, result} ->
           socket = handle_success(socket, result)
           {:noreply, assign(socket, :submitting, false)}
@@ -179,8 +190,18 @@ defmodule DynamicForm.RendererLive do
 
   # Helpers - Data
 
-  defp merge_data(initial_data, changeset_data) do
-    initial = recursively_convert_to_string_keys(initial_data)
+  defp merge_data(initial_params, changeset_data) do
+    # Merging data helps solve a few different scenarios:
+    #
+    # - Editing an existing record that has additional fields like `id` we want
+    #   to preserve. Technically this can be done in the form instance by
+    #   including a hidden `id` field but it's easy to miss. Especially if
+    #   using a WYSIWYG editor and are unfamiliar with forms.
+    #
+    # - Handling disabled fields. Disabled inputs aren't included in the changeset
+    #   which can cause disabled field values to disappear.
+    #
+    initial = recursively_convert_to_string_keys(initial_params)
     changeset = recursively_convert_to_string_keys(changeset_data)
 
     Map.merge(initial, changeset)

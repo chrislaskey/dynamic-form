@@ -10,13 +10,17 @@ defmodule ExampleWeb.RenderLive do
 
   use ExampleWeb, :live_view
 
+  alias DynamicForm.Instance
+
   @impl true
   def mount(_params, _session, socket) do
-    form_instance = Example.FormInstances.contact_form()
+    create_form = Example.FormInstances.contact_form()
+    edit_form = disable_email_field(create_form)
 
     {:ok,
      assign(socket,
-       form_instance: form_instance,
+       create_form: create_form,
+       edit_form: edit_form,
        mode: :create,
        last_submission: nil
      )}
@@ -56,7 +60,7 @@ defmodule ExampleWeb.RenderLive do
           </p>
           <%= if @mode == :edit do %>
             <p class="text-sm text-gray-600 mt-2">
-              Form is pre-populated with sample data as if editing an existing contact record.
+              Form is pre-populated with sample data. Some fields (ID, Email) are disabled to prevent changes.
             </p>
           <% else %>
             <p class="text-sm text-gray-600 mt-2">
@@ -68,16 +72,16 @@ defmodule ExampleWeb.RenderLive do
       
     <!-- The Form -->
       <div class="rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">{@form_instance.name}</h2>
-        <%= if @form_instance.description do %>
-          <p class="text-gray-600 mb-6">{@form_instance.description}</p>
-        <% end %>
-
         <%= if @mode == :create do %>
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">{@create_form.name}</h2>
+          <%= if @create_form.description do %>
+            <p class="text-gray-600 mb-6">{@create_form.description}</p>
+          <% end %>
+
           <.live_component
             module={DynamicForm.RendererLive}
             id="contact-form"
-            instance={@form_instance}
+            instance={@create_form}
             params={%{}}
             send_messages={true}
             submit_text="Create Contact"
@@ -85,10 +89,15 @@ defmodule ExampleWeb.RenderLive do
         <% end %>
 
         <%= if @mode == :edit do %>
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">{@edit_form.name}</h2>
+          <%= if @edit_form.description do %>
+            <p class="text-gray-600 mb-6">{@edit_form.description}</p>
+          <% end %>
+
           <.live_component
             module={DynamicForm.RendererLive}
             id="contact-form-edit"
-            instance={@form_instance}
+            instance={@edit_form}
             params={sample_edit_data()}
             send_messages={true}
             submit_text="Update Contact"
@@ -140,6 +149,9 @@ defmodule ExampleWeb.RenderLive do
             </p>
             <p class="mt-1 text-xs text-gray-600">
               The same DynamicForm.RendererLive component handles both cases automatically.
+              In edit mode, certain fields (like ID and Email) are marked as
+              <code class="bg-white px-1 rounded">disabled: true</code>
+              to prevent modification while still displaying the values.
             </p>
           </div>
           <div>
@@ -207,5 +219,35 @@ defmodule ExampleWeb.RenderLive do
       "subscribe" => "true",
       "newsletter_frequency" => "weekly"
     }
+  end
+
+  # Transform function to add disabled: true to the email field
+  defp disable_email_field(%Instance{} = instance) do
+    %{instance | items: transform_items(instance.items)}
+  end
+
+  # Transform items list, handling both Fields and Elements
+  defp transform_items(items) when is_list(items) do
+    Enum.map(items, &transform_item/1)
+  end
+
+  # Transform a single Field - add disabled: true if it's the email field
+  defp transform_item(%Instance.Field{id: "email"} = field) do
+    %{field | disabled: true}
+  end
+
+  # Transform a single Field - leave other fields unchanged
+  defp transform_item(%Instance.Field{} = field) do
+    field
+  end
+
+  # Transform an Element - recursively transform nested items if they exist
+  defp transform_item(%Instance.Element{items: items} = element) when is_list(items) do
+    %{element | items: transform_items(items)}
+  end
+
+  # Transform an Element without nested items - leave unchanged
+  defp transform_item(%Instance.Element{} = element) do
+    element
   end
 end

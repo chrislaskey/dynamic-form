@@ -5,27 +5,24 @@ defmodule DynamicForm.Backend do
   Backend modules handle form submission after validation. Each backend implements
   how to process the validated form data.
 
+  The function to call on the backend module is configured in the Instance.Backend struct,
+  allowing you to use different function names (e.g., :submit, :process, :handle, etc.).
+
   ## Example
 
       defmodule MyApp.EmailBackend do
         @behaviour DynamicForm.Backend
 
-        @impl DynamicForm.Backend
-        def submit(changeset, config) do
-          recipient_email = Keyword.fetch!(config, :recipient_email)
-          subject = Keyword.fetch!(config, :subject)
+        # This function can be named anything - it's specified in the Backend config
+        def submit(form_data, config: backend_config) do
+          recipient_email = Keyword.fetch!(backend_config, :recipient_email)
+          subject = Keyword.fetch!(backend_config, :subject)
 
-          if changeset.valid? do
-            form_data = Ecto.Changeset.apply_changes(changeset)
-
-            case send_email(recipient_email, subject, form_data) do
-              {:ok, _result} ->
-                {:ok, %{message: "Form submitted successfully via email"}}
-              {:error, reason} ->
-                {:error, %{message: "Failed to send email: \#{reason}"}}
-            end
-          else
-            {:error, %{message: "Form validation failed", errors: changeset.errors}}
+          case send_email(recipient_email, subject, form_data) do
+            {:ok, _result} ->
+              {:ok, %{message: "Form submitted successfully via email", data: form_data}}
+            {:error, reason} ->
+              {:error, %{message: "Failed to send email: \#{reason}"}}
           end
         end
 
@@ -44,15 +41,40 @@ defmodule DynamicForm.Backend do
           {:ok, "email_sent"}
         end
       end
+
+      # Usage in Instance configuration:
+      backend: %DynamicForm.Instance.Backend{
+        module: MyApp.EmailBackend,
+        function: :submit,  # Can be any function name
+        config: [
+          recipient_email: "admin@example.com",
+          subject: "New Form Submission"
+        ]
+      }
   """
 
   @doc """
   Submits the form data using the backend's implementation.
 
-  Receives a validated changeset and backend-specific configuration.
+  This callback documents the expected signature for backend submission functions.
+  The actual function name is configurable via the Instance.Backend struct.
+
+  Receives the form data (as a map) and backend-specific configuration as a keyword list.
   Returns `{:ok, result}` on success or `{:error, reason}` on failure.
+
+  The result map should include:
+  - `:message` - A success/error message
+  - `:data` - The submitted form data (optional but recommended)
+
+  ## Parameters
+    * `form_data` - Map of the submitted form data
+    * `config` - Keyword list of backend-specific configuration (passed as `config: backend_config`)
+
+  ## Returns
+    * `{:ok, result}` - Where result is a map with at least `:message` and optionally `:data`
+    * `{:error, error}` - Where error is a map with at least `:message`
   """
-  @callback submit(changeset :: Ecto.Changeset.t(), config :: Keyword.t()) ::
+  @callback submit(form_data :: map(), config :: Keyword.t()) ::
               {:ok, map()} | {:error, map()}
 
   @doc """

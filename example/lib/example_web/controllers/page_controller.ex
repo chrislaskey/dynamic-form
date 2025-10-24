@@ -10,6 +10,7 @@ defmodule ExampleWeb.PageController do
       items: [],
       backend: %DynamicForm.Instance.Backend{
         module: Example.TestBackend,
+        function: :submit,
         config: []
       }
     }

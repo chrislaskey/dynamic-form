@@ -910,6 +910,7 @@ defmodule MyAppWeb.SurveyResponseLive do
       ],
       backend: %DynamicForm.Instance.Backend{
         module: MyApp.EmailBackend,
+        function: :submit,
         config: [
           recipient_email: "surveys@myapp.com",
           subject: "New Customer Survey Response"

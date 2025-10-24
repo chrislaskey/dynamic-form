@@ -27,6 +27,7 @@ defmodule DynamicForm.Instance do
       ...>   ],
       ...>   backend: %DynamicForm.Instance.Backend{
       ...>     module: MyApp.EmailBackend,
+      ...>     function: :submit,
       ...>     config: [recipient: "admin@example.com"]
       ...>   }
       ...> }
@@ -58,6 +59,27 @@ defmodule DynamicForm.Instance do
   defmodule Field do
     @moduledoc """
     Represents a single form field with its configuration and validation rules.
+
+    ## Disabled Fields
+
+    Fields can be marked as `disabled: true` to prevent user editing while still
+    displaying the field value. This is commonly used in edit forms where certain
+    fields (like IDs, creation timestamps, or verified emails) should be visible
+    but immutable.
+
+    **Important**: Disabled HTML fields are not submitted by browsers. The
+    `DynamicForm.RendererLive` component automatically preserves disabled field
+    values by merging the initial params with form submissions.
+
+    ### Example
+
+        %Field{
+          id: "user_id",
+          name: "user_id",
+          type: "string",
+          label: "User ID",
+          disabled: true
+        }
 
     ## Conditional Visibility
 
@@ -109,6 +131,7 @@ defmodule DynamicForm.Instance do
       :options,
       :validations,
       :required,
+      :disabled,
       :visible_when,
       :metadata,
       __type__: "Field"
@@ -131,6 +154,7 @@ defmodule DynamicForm.Instance do
             options: list() | nil,
             validations: [Validation.t()] | nil,
             required: boolean() | nil,
+            disabled: boolean() | nil,
             visible_when: condition() | nil,
             metadata: map() | nil,
             __type__: String.t()
@@ -247,11 +271,22 @@ defmodule DynamicForm.Instance do
     Configuration for the form submission backend.
 
     The backend module should implement the `DynamicForm.Backend` behaviour.
+
+    ## Example
+
+        %Backend{
+          module: MyApp.EmailBackend,
+          function: :submit,
+          config: [recipient: "admin@example.com"],
+          name: "Email Backend",
+          description: "Sends form submissions via email"
+        }
     """
 
-    @enforce_keys [:module, :config]
+    @enforce_keys [:module, :function, :config]
     defstruct [
       :module,
+      :function,
       :config,
       :name,
       :description
@@ -259,6 +294,7 @@ defmodule DynamicForm.Instance do
 
     @type t :: %__MODULE__{
             module: module(),
+            function: atom(),
             config: Keyword.t(),
             name: String.t() | nil,
             description: String.t() | nil

@@ -173,6 +173,7 @@ defmodule Example.FormInstances do
       ],
       backend: %Instance.Backend{
         module: Example.TestBackend,
+        function: :submit,
         config: [],
         name: "Test Backend",
         description: "Logs form submissions for testing"
@@ -405,6 +406,7 @@ defmodule Example.FormInstances do
       ],
       backend: %Instance.Backend{
         module: Example.TestBackend,
+        function: :submit,
         config: [],
         name: "Test Backend",
         description: "Logs form submissions for testing"
@@ -646,6 +648,7 @@ defmodule Example.FormInstances do
       ],
       backend: %Instance.Backend{
         module: Example.TestBackend,
+        function: :submit,
         config: [],
         name: "Test Backend",
         description: "Logs form submissions for testing"
