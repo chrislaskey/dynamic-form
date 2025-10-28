@@ -39,6 +39,7 @@ defmodule ExampleWeb.SectionFormLive do
           phx_submit="submit"
           phx_change="validate"
           form_id="section-form"
+          gettext={ExampleWeb.Gettext}
         />
       </div>
 

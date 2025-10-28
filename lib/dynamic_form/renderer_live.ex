@@ -18,6 +18,7 @@ defmodule DynamicForm.RendererLive do
     * `:form_name` - Form namespace for params (string, default: `"dynamic_form"`)
     * `:submit_text` - Submit button text (string, default: `nil`)
     * `:send_messages` - Whether to send messages to parent LiveView (boolean, default: `false`)
+    * `:gettext` - Gettext backend module for translations (atom, default: `DynamicForm.Gettext`)
 
   ## Usage
 
@@ -98,6 +99,7 @@ defmodule DynamicForm.RendererLive do
   def update(assigns, socket) do
     form_name = Map.get(assigns, :form_name, "dynamic_form")
     initial_params = Map.get(assigns, :params, %{})
+    gettext = Map.get(assigns, :gettext, DynamicForm.Gettext)
     changeset = Changeset.create_changeset(assigns.instance, initial_params)
     form = to_form(changeset, as: form_name)
 
@@ -108,6 +110,7 @@ defmodule DynamicForm.RendererLive do
      |> assign(:form, form)
      |> assign(:form_name, form_name)
      |> assign(:initial_params, initial_params)
+     |> assign(:gettext, gettext)
      |> assign(:submitting, false)}
   end
 
@@ -124,6 +127,7 @@ defmodule DynamicForm.RendererLive do
         target={@myself}
         form_id={"#{@id}-form"}
         disabled={@submitting}
+        gettext={@gettext}
       />
     </div>
     """

@@ -36,6 +36,11 @@ defmodule DynamicForm.Renderer do
   attr(:form_id, :string, default: "dynamic-form", doc: "HTML ID for the form element")
   attr(:disabled, :boolean, default: false, doc: "Whether the form is disabled")
 
+  attr(:gettext, :atom,
+    default: DynamicForm.Gettext,
+    doc: "Gettext backend module for translations"
+  )
+
   def render(assigns) do
     submit_text = assigns.submit_text || "Submit"
     assigns = assign(assigns, :submit_text, submit_text)
@@ -50,7 +55,7 @@ defmodule DynamicForm.Renderer do
       phx-target={@target}
     >
       <%= for item <- visible_items(@instance.items, @form) do %>
-        <%= render_item(item, f, disabled: @disabled) %>
+        <%= render_item(item, f, disabled: @disabled, gettext: @gettext) %>
       <% end %>
 
       <div class="mt-6 flex items-center justify-end gap-x-6">
