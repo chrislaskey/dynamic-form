@@ -32,6 +32,10 @@ defmodule ExampleWeb.FormTestComponentLive do
           <code class="bg-gray-100 px-2 py-1 rounded">DynamicForm.RendererLive</code>
           LiveComponent with automatic state management.
         </p>
+        <p class="mt-2 text-sm text-indigo-600">
+          <strong>New:</strong>
+          This form uses an external submit button (shown below) instead of a button inside the form.
+        </p>
       </div>
       
     <!-- Mode Selector -->
@@ -59,6 +63,13 @@ defmodule ExampleWeb.FormTestComponentLive do
           <code class="block mt-1 bg-white p-2 rounded">{describe_mode(@callback_mode)}</code>
         </div>
       </div>
+
+      <%!-- External submit button at the top --%>
+      <div class="mb-6 flex justify-end">
+        <DynamicForm.submit_button form="contact-form-form" class="shadow-lg">
+          {if @callback_mode == :message, do: "💾 Submit with Messages", else: "💾 Submit (No Messages)"}
+        </DynamicForm.submit_button>
+      </div>
       
     <!-- LiveComponent with dynamic modes -->
       <div class="rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
@@ -68,6 +79,7 @@ defmodule ExampleWeb.FormTestComponentLive do
             id="contact-form"
             instance={@form_instance}
             send_messages={true}
+            hide_submit={true}
             submit_text="Submit with Messages"
           />
         <% end %>
@@ -77,6 +89,7 @@ defmodule ExampleWeb.FormTestComponentLive do
             module={DynamicForm.RendererLive}
             id="contact-form"
             instance={@form_instance}
+            hide_submit={true}
             submit_text="Submit (No Messages)"
           />
         <% end %>
@@ -110,6 +123,15 @@ defmodule ExampleWeb.FormTestComponentLive do
               The component handles everything internally. Useful for simple forms that don't
               need custom behavior after submission. The form will still validate and submit,
               but the parent LiveView won't be notified of the results.
+            </p>
+          </div>
+          <div>
+            <h4 class="font-semibold">✨ External Submit Button</h4>
+            <p class="mt-1">
+              This form demonstrates the external submit button feature. The submit button
+              at the top uses <code class="bg-white px-1 rounded">form="contact-form-form"</code>
+              to connect to the LiveComponent. Note: the form ID is auto-generated as <code class="bg-white px-1 rounded">"&#123;id&#125;-form"</code>, so component ID
+              "contact-form" becomes form ID "contact-form-form".
             </p>
           </div>
         </div>

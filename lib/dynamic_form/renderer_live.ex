@@ -18,6 +18,7 @@ defmodule DynamicForm.RendererLive do
     * `:form_name` - Form namespace for params (string, default: `"dynamic_form"`)
     * `:submit_text` - Submit button text (string, default: `nil`)
     * `:send_messages` - Whether to send messages to parent LiveView (boolean, default: `false`)
+    * `:hide_submit` - Whether to hide the submit button (boolean, default: `false`)
     * `:gettext` - Gettext backend module for translations (atom, default: `DynamicForm.Gettext`)
 
   ## Usage
@@ -73,6 +74,26 @@ defmodule DynamicForm.RendererLive do
   are automatically preserved by merging the initial `:params` with form submissions.
   This ensures disabled field values remain in the changeset throughout validation
   and submission.
+
+  ### External Submit Button
+
+  You can place a submit button outside the form element by using the `hide_submit`
+  option and `DynamicForm.RendererLive.submit_button/1`:
+
+      <DynamicForm.RendererLive.submit_button form="my-form-form">
+        Save Changes
+      </DynamicForm.RendererLive.submit_button>
+
+      <.live_component
+        module={DynamicForm.RendererLive}
+        id="my-form"
+        instance={@form_instance}
+        hide_submit={true}
+        send_messages={true}
+      />
+
+  Note: The form ID is automatically generated as `"\#{id}-form"`, so if your component
+  ID is "my-form", the form element ID will be "my-form-form".
 
   ## Backend Function
 
@@ -146,6 +167,9 @@ defmodule DynamicForm.RendererLive do
 
   @impl true
   def render(assigns) do
+    hide_submit = Map.get(assigns, :hide_submit, false)
+    assigns = assign(assigns, :hide_submit, hide_submit)
+
     ~H"""
     <div>
       <Renderer.render
@@ -157,6 +181,7 @@ defmodule DynamicForm.RendererLive do
         target={@myself}
         form_id={"#{@id}-form"}
         disabled={@submitting}
+        hide_submit={@hide_submit}
         gettext={@gettext}
       />
     </div>
@@ -286,5 +311,81 @@ defmodule DynamicForm.RendererLive do
     end
 
     socket
+  end
+
+  # Public API
+
+  @doc """
+  Renders a submit button that can be placed outside a form element.
+
+  Uses the HTML `form` attribute to associate the button with a form by its ID.
+  This allows the submit button to be placed anywhere on the page, not just
+  inside the form element.
+
+  When using with `DynamicForm.RendererLive`, the form ID is automatically
+  generated as `"\#{component_id}-form"`. For example, if your LiveComponent
+  has `id="my-form"`, the form element ID will be `"my-form-form"`.
+
+  ## Examples
+
+      # LiveComponent with external submit button
+      <DynamicForm.RendererLive.submit_button form="contact-form-form">
+        Submit Contact Form
+      </DynamicForm.RendererLive.submit_button>
+
+      <.live_component
+        module={DynamicForm.RendererLive}
+        id="contact-form"
+        instance={@form_instance}
+        hide_submit={true}
+      />
+
+      # In a modal footer
+      <.modal id="edit-modal">
+        <.live_component
+          module={DynamicForm.RendererLive}
+          id="user-profile"
+          instance={@form_instance}
+          hide_submit={true}
+        />
+        <:actions>
+          <DynamicForm.RendererLive.submit_button form="user-profile-form">
+            Save Profile
+          </DynamicForm.RendererLive.submit_button>
+        </:actions>
+      </.modal>
+
+  ## Attributes
+
+    * `form` - The ID of the form element to submit (required)
+    * `class` - Additional CSS classes to apply to the button
+    * `disabled` - Whether the button is disabled
+  """
+  use Phoenix.Component
+
+  attr(:form, :string, required: true, doc: "The ID of the form element to submit")
+  attr(:class, :string, default: nil, doc: "Additional CSS classes")
+  attr(:disabled, :boolean, default: false, doc: "Whether the button is disabled")
+  attr(:rest, :global, include: ~w(name value))
+
+  slot(:inner_block, required: true)
+
+  def submit_button(assigns) do
+    ~H"""
+    <button
+      type="submit"
+      form={@form}
+      disabled={@disabled}
+      class={[
+        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
+        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        @class
+      ]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </button>
+    """
   end
 end

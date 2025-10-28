@@ -1,22 +1,14 @@
 defmodule ExampleWeb.SectionFormLive do
   use ExampleWeb, :live_view
 
-  alias DynamicForm.Changeset
-
   @impl true
   def mount(_params, _session, socket) do
     # Get section form instance
     form_instance = Example.FormInstances.section_form()
 
-    # Create initial changeset
-    changeset = Changeset.create_changeset(form_instance, %{})
-    form = to_form(changeset, as: "form")
-
     {:ok,
      socket
      |> assign(:form_instance, form_instance)
-     |> assign(:changeset, changeset)
-     |> assign(:form, form)
      |> assign(:submitted_data, nil)}
   end
 
@@ -37,21 +29,19 @@ defmodule ExampleWeb.SectionFormLive do
 
       <%!-- External submit button at the top --%>
       <div class="mb-6 flex justify-end">
-        <DynamicForm.submit_button form="section-form" class="shadow-lg">
+        <DynamicForm.submit_button form="section-form-form" class="shadow-lg">
           💾 Save Profile
         </DynamicForm.submit_button>
       </div>
 
       <div class="rounded-lg bg-gray-50 shadow-sm ring-1 ring-gray-900/5 p-6">
-        <DynamicForm.Renderer.render
+        <.live_component
+          module={DynamicForm.RendererLive}
+          id="section-form"
           instance={@form_instance}
-          form={@form}
-          submit_text="Save Profile"
-          phx_submit="submit"
-          phx_change="validate"
-          form_id="section-form"
           hide_submit={true}
-          gettext={ExampleWeb.Gettext}
+          send_messages={true}
+          submit_text="Save Profile"
         />
       </div>
 
@@ -128,20 +118,20 @@ defmodule ExampleWeb.SectionFormLive do
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Code Examples</h3>
         <div class="text-sm text-gray-800 space-y-4">
           <div>
-            <p class="mb-2 font-semibold">Using an External Submit Button:</p>
+            <p class="mb-2 font-semibold">Using an External Submit Button with LiveComponent:</p>
             <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&lt;!-- External submit button anywhere on the page --&gt;
-              &lt;DynamicForm.submit_button form="section-form"&gt;
+              &lt;!-- Note: form ID is "&#123;id&#125;-form", so "section-form" becomes "section-form-form" --&gt;
+              &lt;DynamicForm.submit_button form="section-form-form"&gt;
                 Save Profile
               &lt;/DynamicForm.submit_button&gt;
 
-              &lt;!-- Form with hide_submit set to true --&gt;
-              &lt;DynamicForm.Renderer.render
+              &lt;!-- LiveComponent with hide_submit set to true --&gt;
+              &lt;.live_component
+                module=&#123;DynamicForm.RendererLive&#125;
+                id="section-form"
                 instance=&#123;@form_instance&#125;
-                form=&#123;@form&#125;
-                form_id="section-form"
                 hide_submit=&#123;true&#125;
-                phx_submit="submit"
-                phx_change="validate"
+                send_messages=&#123;true&#125;
               /&gt;</code></pre>
           </div>
 
@@ -175,59 +165,19 @@ defmodule ExampleWeb.SectionFormLive do
     """
   end
 
+  # Handle messages from RendererLive component
   @impl true
-  def handle_event("validate", %{"form" => params}, socket) do
-    changeset =
-      socket.assigns.form_instance
-      |> Changeset.create_changeset(params)
-      |> Map.put(:action, :validate)
-
-    form = to_form(changeset, as: "form")
-
+  def handle_info({:dynamic_form_success, _id, result}, socket) do
     {:noreply,
      socket
-     |> assign(:changeset, changeset)
-     |> assign(:form, form)}
+     |> assign(:submitted_data, result.data)
+     |> put_flash(:info, result.message || "Profile saved successfully!")}
   end
 
   @impl true
-  def handle_event("submit", %{"form" => params}, socket) do
-    changeset =
-      socket.assigns.form_instance
-      |> Changeset.create_changeset(params)
-      |> Map.put(:action, :update)
-
-    case changeset.valid? do
-      true ->
-        # Submit via backend
-        instance = socket.assigns.form_instance
-        backend_module = instance.backend.module
-        backend_config = instance.backend.config
-
-        case backend_module.submit(changeset, backend_config) do
-          {:ok, result} ->
-            form_data = Ecto.Changeset.apply_changes(changeset)
-
-            {:noreply,
-             socket
-             |> assign(:submitted_data, form_data)
-             |> put_flash(:info, result.message || "Profile saved successfully!")}
-
-          {:error, error} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, error.message || "Failed to save profile")}
-        end
-
-      false ->
-        changeset = Map.put(changeset, :action, :validate)
-        form = to_form(changeset, as: "form")
-
-        {:noreply,
-         socket
-         |> assign(:changeset, changeset)
-         |> assign(:form, form)
-         |> put_flash(:error, "Please fix the errors below")}
-    end
+  def handle_info({:dynamic_form_error, _id, error}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:error, error.message || "Failed to save profile")}
   end
 end
