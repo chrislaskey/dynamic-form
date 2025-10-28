@@ -74,6 +74,36 @@ defmodule DynamicForm.RendererLive do
   This ensures disabled field values remain in the changeset throughout validation
   and submission.
 
+  ## Backend Function
+
+  The backend function specified in the form instance is called with the following signature:
+
+      backend_function(data, opts)
+
+  Where:
+    * `data` - The validated form data (Ecto.Changeset.apply_changes/1 result)
+    * `opts` - Keyword list containing:
+      - `:config` - The backend configuration from the form instance
+      - `:changeset` - The validated changeset
+
+  The backend function can return:
+    * `{:ok, result}` - Success, where result is passed to success handlers
+    * `{:error, %Ecto.Changeset{}}` - Validation errors to display on the form
+    * `{:error, error}` - General error, passed to error handlers
+
+  Example backend function that adds custom errors:
+
+      def process_form(data, opts) do
+        config = Keyword.get(opts, :config)
+        changeset = Keyword.get(opts, :changeset)
+
+        if email_already_exists?(data.email) do
+          {:error, Ecto.Changeset.add_error(changeset, :email, "already taken")}
+        else
+          save_to_database(data, config)
+        end
+      end
+
   ## Messages
 
   When `send_messages` is `true`, the component sends these messages to the parent LiveView:
@@ -171,11 +201,21 @@ defmodule DynamicForm.RendererLive do
       backend_config = instance.backend.config
 
       socket = assign(socket, :submitting, true)
+      meta = [config: backend_config, changeset: changeset]
 
-      case apply(backend_module, backend_function, [data, [config: backend_config]]) do
+      case apply(backend_module, backend_function, [data, meta]) do
         {:ok, result} ->
           socket = handle_success(socket, result)
           {:noreply, assign(socket, :submitting, false)}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          changeset = Map.put(changeset, :action, :validate)
+          form = to_form(changeset, as: socket.assigns.form_name)
+
+          {:noreply,
+           socket
+           |> assign(:changeset, changeset)
+           |> assign(:form, form)}
 
         {:error, error} ->
           socket = handle_error(socket, error)
