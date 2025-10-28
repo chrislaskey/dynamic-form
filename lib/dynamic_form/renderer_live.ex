@@ -16,7 +16,7 @@ defmodule DynamicForm.RendererLive do
 
     * `:params` - Initial form params for edit mode (map, default: `%{}`)
     * `:form_name` - Form namespace for params (string, default: `"dynamic_form"`)
-    * `:submit_text` - Submit button text (string, default: `nil`)
+    * `:submit_text` - Submit button text (string, default: `"Submit"`, not required when `hide_submit` is `true`)
     * `:send_messages` - Whether to send messages to parent LiveView (boolean, default: `false`)
     * `:hide_submit` - Whether to hide the submit button (boolean, default: `false`)
     * `:gettext` - Gettext backend module for translations (atom, default: `DynamicForm.Gettext`)
@@ -168,7 +168,12 @@ defmodule DynamicForm.RendererLive do
   @impl true
   def render(assigns) do
     hide_submit = Map.get(assigns, :hide_submit, false)
-    assigns = assign(assigns, :hide_submit, hide_submit)
+    submit_text = Map.get(assigns, :submit_text, "Submit")
+
+    assigns =
+      assigns
+      |> assign(:hide_submit, hide_submit)
+      |> assign(:submit_text, submit_text)
 
     ~H"""
     <div>
