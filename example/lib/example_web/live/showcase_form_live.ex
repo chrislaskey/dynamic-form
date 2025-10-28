@@ -1,12 +1,15 @@
 defmodule ExampleWeb.ShowcaseFormLive do
   use ExampleWeb, :live_view
 
-  alias DynamicForm.Changeset
+  alias DynamicForm.{Changeset, Instance}
 
   @impl true
   def mount(_params, _session, socket) do
-    # Get showcase form instance
-    form_instance = Example.FormInstances.showcase_form()
+    # Get showcase form instance (could be struct, JSON, or map)
+    form_instance_raw = Example.FormInstances.showcase_form()
+
+    # Decode at the edge - ensure we have an Instance struct
+    form_instance = decode_instance(form_instance_raw)
 
     # Create initial changeset
     changeset = Changeset.create_changeset(form_instance, %{})
@@ -18,6 +21,13 @@ defmodule ExampleWeb.ShowcaseFormLive do
      |> assign(:changeset, changeset)
      |> assign(:form, form)
      |> assign(:submitted_data, nil)}
+  end
+
+  # Decode instance at the edge of the system
+  defp decode_instance(%Instance{} = instance), do: instance
+
+  defp decode_instance(data) when is_binary(data) or is_map(data) do
+    Instance.decode!(data)
   end
 
   @impl true

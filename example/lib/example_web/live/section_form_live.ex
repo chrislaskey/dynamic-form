@@ -6,9 +6,14 @@ defmodule ExampleWeb.SectionFormLive do
     # Get section form instance
     form_instance = Example.FormInstances.section_form()
 
+    # Encode to JSON for demonstration
+    json_string = Jason.encode!(form_instance)
+
     {:ok,
      socket
      |> assign(:form_instance, form_instance)
+     |> assign(:json_string, json_string)
+     |> assign(:use_json, true)
      |> assign(:submitted_data, nil)}
   end
 
@@ -27,6 +32,27 @@ defmodule ExampleWeb.SectionFormLive do
         </p>
       </div>
 
+      <%!-- JSON vs Struct Toggle --%>
+      <div class="mb-6 rounded-lg bg-indigo-50 border border-indigo-200 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-indigo-900">Instance Format</h3>
+            <p class="mt-1 text-xs text-indigo-700">
+              Toggle between struct and JSON string to see both formats work identically
+            </p>
+          </div>
+          <button
+            phx-click="toggle_format"
+            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <%= if @use_json, do: "📋 Using JSON String", else: "🏗️ Using Struct" %>
+          </button>
+        </div>
+        <div class="mt-3 text-xs text-indigo-800 font-mono bg-indigo-100 p-2 rounded">
+          instance=&lbrace;<%= if @use_json, do: "@json_string", else: "@form_instance" %>&rbrace;
+        </div>
+      </div>
+
       <%!-- External submit button at the top --%>
       <div class="mb-6 flex justify-end">
         <DynamicForm.submit_button form="section-form-form" class="shadow-lg">
@@ -38,7 +64,7 @@ defmodule ExampleWeb.SectionFormLive do
         <.live_component
           module={DynamicForm.RendererLive}
           id="section-form"
-          instance={@form_instance}
+          instance={if @use_json, do: @json_string, else: @form_instance}
           hide_submit={true}
           send_messages={true}
           submit_text="Save Profile"
@@ -54,6 +80,30 @@ defmodule ExampleWeb.SectionFormLive do
           </div>
         </div>
       <% end %>
+
+      <div class="mt-8 rounded-lg bg-purple-50 p-6">
+        <h3 class="text-lg font-semibold text-purple-900 mb-4">
+          🎉 New: JSON Encoding/Decoding
+        </h3>
+        <div class="text-sm text-purple-800 space-y-3">
+          <p>
+            <strong>DynamicForm now supports JSON!</strong>
+            You can encode form instances to JSON and decode them back to structs.
+            This makes it easy to:
+          </p>
+          <ul class="list-disc list-inside ml-4">
+            <li>Store form configurations in a database as JSON</li>
+            <li>Send form configurations over the wire (API responses)</li>
+            <li>Serialize/deserialize form configurations for caching</li>
+            <li>Create forms from JSON configuration files</li>
+          </ul>
+          <p class="mt-2">
+            <strong>Try it:</strong>
+            Use the toggle button above to switch between struct and JSON formats. The form works
+            identically with both!
+          </p>
+        </div>
+      </div>
 
       <div class="mt-8 rounded-lg bg-blue-50 p-6">
         <h3 class="text-lg font-semibold text-blue-900 mb-4">📦 Section Features</h3>
@@ -118,51 +168,113 @@ defmodule ExampleWeb.SectionFormLive do
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Code Examples</h3>
         <div class="text-sm text-gray-800 space-y-4">
           <div>
-            <p class="mb-2 font-semibold">Using an External Submit Button with LiveComponent:</p>
-            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&lt;!-- External submit button anywhere on the page --&gt;
-              &lt;!-- Note: form ID is "&#123;id&#125;-form", so "section-form" becomes "section-form-form" --&gt;
+            <p class="mb-2 font-semibold">✨ Using JSON with LiveComponent (New Feature!):</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>
+              &lt;!-- You can now pass JSON strings directly! --&gt;
+              &lt;.live_component
+                module=&lbrace;DynamicForm.RendererLive&rbrace;
+                id="section-form"
+                instance=&lbrace;@json_string&rbrace;  &lt;!-- JSON string --&gt;
+                send_messages=&lbrace;true&rbrace;
+              /&gt;
+
+              &lt;!-- Or use a map --&gt;
+              &lt;.live_component
+                module=&lbrace;DynamicForm.RendererLive&rbrace;
+                id="section-form"
+                instance=&lbrace;@instance_map&rbrace;  &lt;!-- Map from Jason.decode! --&gt;
+                send_messages=&lbrace;true&rbrace;
+              /&gt;
+
+              &lt;!-- Or the original struct format --&gt;
+              &lt;.live_component
+                module=&lbrace;DynamicForm.RendererLive&rbrace;
+                id="section-form"
+                instance=&lbrace;@form_instance&rbrace;  &lt;!-- Instance struct --&gt;
+                send_messages=&lbrace;true&rbrace;
+              /&gt;
+            </code></pre>
+          </div>
+
+          <div>
+            <p class="mb-2 font-semibold">Encoding and Decoding Forms:</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>
+              # In your LiveView mount/3
+              def mount(_params, _session, socket) do
+                # Create or load your form instance
+                form_instance = Example.FormInstances.section_form()
+
+                # Encode to JSON string
+                json_string = Jason.encode!(form_instance)
+
+                # Later, decode back to struct
+                decoded_instance = DynamicForm.Instance.decode!(json_string)
+
+                # Or decode from a map
+                map = Jason.decode!(json_string)
+                decoded_instance = DynamicForm.Instance.decode!(map)
+
+                &lbrace;:ok, assign(socket, form_instance: form_instance)&rbrace;
+              end
+            </code></pre>
+          </div>
+
+          <div>
+            <p class="mb-2 font-semibold">Using an External Submit Button:</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>
+              &lt;!-- External submit button anywhere on the page --&gt;
+              &lt;!-- Note: form ID is "&lbrace;id&rbrace;-form", so "section-form" becomes "section-form-form" --&gt;
               &lt;DynamicForm.submit_button form="section-form-form"&gt;
                 Save Profile
               &lt;/DynamicForm.submit_button&gt;
 
               &lt;!-- LiveComponent with hide_submit set to true --&gt;
               &lt;.live_component
-                module=&#123;DynamicForm.RendererLive&#125;
+                module=&lbrace;DynamicForm.RendererLive&rbrace;
                 id="section-form"
-                instance=&#123;@form_instance&#125;
-                hide_submit=&#123;true&#125;
-                send_messages=&#123;true&#125;
-              /&gt;</code></pre>
+                instance=&lbrace;@form_instance&rbrace;
+                hide_submit=&lbrace;true&rbrace;
+                send_messages=&lbrace;true&rbrace;
+              /&gt;
+            </code></pre>
           </div>
 
           <div>
             <p class="mb-2 font-semibold">Example of defining a section in your form instance:</p>
-            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&#37;Instance.Element&#123;
-            id: "personal-section",
-            type: "section",
-            content: "Personal Information",
-            items: [
-              &#37;Instance.Field&#123;
-                id: "first_name",
-                name: "first_name",
-                type: "string",
-                label: "First Name",
-                required: true
-              &#125;,
-              &#37;Instance.Field&#123;
-                id: "email",
-                name: "email",
-                type: "email",
-                label: "Email",
-                required: true
-              &#125;
-            ]
-          &#125;</code></pre>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>
+              &#37;Instance.Element&lbrace;
+                id: "personal-section",
+                type: "section",
+                content: "Personal Information",
+                items: [
+                  &#37;Instance.Field&lbrace;
+                    id: "first_name",
+                    name: "first_name",
+                    type: "string",
+                    label: "First Name",
+                    required: true
+                  &rbrace;,
+                  &#37;Instance.Field&lbrace;
+                    id: "email",
+                    name: "email",
+                    type: "email",
+                    label: "Email",
+                    required: true
+                  &rbrace;
+                ]
+              &rbrace;
+            </code></pre>
           </div>
         </div>
       </div>
     </div>
     """
+  end
+
+  # Handle toggle between struct and JSON
+  @impl true
+  def handle_event("toggle_format", _params, socket) do
+    {:noreply, assign(socket, :use_json, !socket.assigns.use_json)}
   end
 
   # Handle messages from RendererLive component

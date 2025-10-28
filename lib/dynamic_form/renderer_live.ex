@@ -10,7 +10,7 @@ defmodule DynamicForm.RendererLive do
   ### Required
 
     * `:id` - Component ID (string, required by LiveComponent)
-    * `:instance` - DynamicForm.Instance struct containing form configuration
+    * `:instance` - DynamicForm.Instance struct, JSON string, or map containing form configuration
 
   ### Optional
 
@@ -139,7 +139,7 @@ defmodule DynamicForm.RendererLive do
   """
 
   use Phoenix.LiveComponent
-  alias DynamicForm.{Renderer, Changeset}
+  alias DynamicForm.{Renderer, Changeset, Instance}
 
   @impl true
   def mount(socket) do
@@ -148,15 +148,19 @@ defmodule DynamicForm.RendererLive do
 
   @impl true
   def update(assigns, socket) do
+    # Decode instance if needed
+    instance = decode_instance(assigns.instance)
+
     form_name = Map.get(assigns, :form_name, "dynamic_form")
     initial_params = Map.get(assigns, :params, %{})
     gettext = Map.get(assigns, :gettext, DynamicForm.Gettext)
-    changeset = Changeset.create_changeset(assigns.instance, initial_params)
+    changeset = Changeset.create_changeset(instance, initial_params)
     form = to_form(changeset, as: form_name)
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:instance, instance)
      |> assign(:changeset, changeset)
      |> assign(:form, form)
      |> assign(:form_name, form_name)
@@ -392,5 +396,12 @@ defmodule DynamicForm.RendererLive do
       {render_slot(@inner_block)}
     </button>
     """
+  end
+
+  # Helper to decode instance from various formats
+  defp decode_instance(%Instance{} = instance), do: instance
+
+  defp decode_instance(data) when is_binary(data) or is_map(data) do
+    Instance.decode!(data)
   end
 end

@@ -31,6 +31,19 @@ defmodule DynamicForm.Instance do
       ...>     config: [recipient: "admin@example.com"]
       ...>   }
       ...> }
+
+  ## JSON Encoding/Decoding
+
+  Instances can be encoded to JSON and decoded back:
+
+      # Encode to JSON
+      json = Jason.encode!(instance)
+
+      # Decode from JSON
+      instance = DynamicForm.Instance.decode!(json)
+
+      # Decode from map
+      instance = DynamicForm.Instance.decode!(map)
   """
 
   @enforce_keys [:id, :name, :items]
@@ -55,6 +68,29 @@ defmodule DynamicForm.Instance do
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
+
+  @doc """
+  Decodes a JSON string or map into a DynamicForm.Instance struct.
+
+  ## Examples
+
+      iex> json = ~s({"id": "my-form", "name": "My Form", "items": []})
+      iex> DynamicForm.Instance.decode!(json)
+      %DynamicForm.Instance{id: "my-form", name: "My Form", items: []}
+
+      iex> map = %{"id" => "my-form", "name" => "My Form", "items" => []}
+      iex> DynamicForm.Instance.decode!(map)
+      %DynamicForm.Instance{id: "my-form", name: "My Form", items: []}
+  """
+  def decode!(data) when is_binary(data) do
+    data
+    |> Jason.decode!()
+    |> decode!()
+  end
+
+  def decode!(data) when is_map(data) do
+    DynamicForm.Instance.Decoder.decode_instance(data)
+  end
 
   defmodule Field do
     @moduledoc """
@@ -161,6 +197,41 @@ defmodule DynamicForm.Instance do
           }
   end
 
+  defimpl Jason.Encoder, for: Field do
+    def encode(field, opts) do
+      Jason.Encode.map(
+        %{
+          id: field.id,
+          name: field.name,
+          type: field.type,
+          label: field.label,
+          placeholder: field.placeholder,
+          help_text: field.help_text,
+          default_value: field.default_value,
+          options: encode_options(field.options),
+          validations: field.validations,
+          required: field.required,
+          disabled: field.disabled,
+          visible_when: field.visible_when,
+          metadata: field.metadata,
+          __type__: field.__type__
+        },
+        opts
+      )
+    end
+
+    # Convert tuple options {label, value} to arrays [label, value] for JSON
+    defp encode_options(nil), do: nil
+    defp encode_options([]), do: []
+
+    defp encode_options(options) when is_list(options) do
+      Enum.map(options, fn
+        {label, value} -> [label, value]
+        other -> other
+      end)
+    end
+  end
+
   defmodule Element do
     @moduledoc """
     Represents a non-input element in a form, such as headings, paragraphs, dividers, or groups.
@@ -238,6 +309,7 @@ defmodule DynamicForm.Instance do
         }
     """
 
+    @derive Jason.Encoder
     @enforce_keys [:id, :type]
     defstruct [
       :id,
@@ -301,11 +373,36 @@ defmodule DynamicForm.Instance do
           }
   end
 
+  defimpl Jason.Encoder, for: Backend do
+    def encode(backend, opts) do
+      Jason.Encode.map(
+        %{
+          module: to_string(backend.module),
+          function: backend.function,
+          config: encode_config(backend.config),
+          name: backend.name,
+          description: backend.description
+        },
+        opts
+      )
+    end
+
+    # Convert keyword list to a list of maps for JSON serialization
+    defp encode_config(config) when is_list(config) do
+      Enum.map(config, fn {key, value} ->
+        %{"key" => to_string(key), "value" => value}
+      end)
+    end
+
+    defp encode_config(config), do: config
+  end
+
   defmodule Validation do
     @moduledoc """
     Represents a validation rule for a form field.
     """
 
+    @derive Jason.Encoder
     @enforce_keys [:type]
     defstruct [
       :type,
@@ -322,5 +419,27 @@ defmodule DynamicForm.Instance do
             max: number() | nil,
             message: String.t() | nil
           }
+  end
+
+  # Custom encoder for Instance that handles DateTime fields
+  defimpl Jason.Encoder, for: __MODULE__ do
+    def encode(instance, opts) do
+      Jason.Encode.map(
+        %{
+          id: instance.id,
+          name: instance.name,
+          description: instance.description,
+          items: instance.items,
+          backend: instance.backend,
+          metadata: instance.metadata,
+          inserted_at: encode_datetime(instance.inserted_at),
+          updated_at: encode_datetime(instance.updated_at)
+        },
+        opts
+      )
+    end
+
+    defp encode_datetime(nil), do: nil
+    defp encode_datetime(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
   end
 end

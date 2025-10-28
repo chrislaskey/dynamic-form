@@ -47,7 +47,12 @@ defmodule DynamicForm.Renderer do
   alias DynamicForm.CoreComponents
   alias DynamicForm.Instance
 
-  attr(:instance, Instance, required: true, doc: "The form instance configuration")
+  attr(:instance, :any,
+    required: true,
+    doc:
+      "The form instance configuration. Can be an Instance struct, JSON string, or map that will be decoded into an Instance."
+  )
+
   attr(:form, Phoenix.HTML.Form, required: true, doc: "The Phoenix form struct")
   attr(:submit_text, :string, default: nil, doc: "Text for the submit button")
   attr(:phx_submit, :string, default: "submit", doc: "Phoenix event name for form submission")
@@ -72,8 +77,14 @@ defmodule DynamicForm.Renderer do
   )
 
   def render(assigns) do
+    # Decode instance if needed
+    instance = decode_instance(assigns.instance)
     submit_text = assigns.submit_text || "Submit"
-    assigns = assign(assigns, :submit_text, submit_text)
+
+    assigns =
+      assigns
+      |> assign(:instance, instance)
+      |> assign(:submit_text, submit_text)
 
     ~H"""
     <.form
@@ -125,7 +136,7 @@ defmodule DynamicForm.Renderer do
     evaluate_condition(condition, form)
   end
 
-  # Evaluate "equals" operator
+  # Evaluate "equals" operator with atom keys
   defp evaluate_condition(%{field: field_name, operator: "equals", value: expected}, form) do
     field_atom = String.to_existing_atom(field_name)
     current_value = Phoenix.HTML.Form.input_value(form, field_atom)
@@ -134,8 +145,40 @@ defmodule DynamicForm.Renderer do
     ArgumentError -> false
   end
 
-  # Evaluate "valid" operator - field must have a value and be valid (no errors)
+  # Evaluate "equals" operator with string keys (from JSON decoding)
+  defp evaluate_condition(
+         %{"field" => field_name, "operator" => "equals", "value" => expected},
+         form
+       ) do
+    field_atom = String.to_existing_atom(field_name)
+    current_value = Phoenix.HTML.Form.input_value(form, field_atom)
+    current_value == expected
+  rescue
+    ArgumentError -> false
+  end
+
+  # Evaluate "valid" operator with atom keys
   defp evaluate_condition(%{field: field_name, operator: "valid"}, form) do
+    field_atom = String.to_existing_atom(field_name)
+    current_value = Phoenix.HTML.Form.input_value(form, field_atom)
+
+    # Check if field has a value (not nil, not empty string)
+    has_value = current_value != nil and current_value != ""
+
+    # Check if field has no errors in the changeset
+    has_no_errors =
+      case Keyword.get(form.errors || [], field_atom) do
+        nil -> true
+        _ -> false
+      end
+
+    has_value and has_no_errors
+  rescue
+    ArgumentError -> false
+  end
+
+  # Evaluate "valid" operator with string keys (from JSON decoding)
+  defp evaluate_condition(%{"field" => field_name, "operator" => "valid"}, form) do
     field_atom = String.to_existing_atom(field_name)
     current_value = Phoenix.HTML.Form.input_value(form, field_atom)
 
@@ -646,5 +689,12 @@ defmodule DynamicForm.Renderer do
       </div>
     </div>
     """
+  end
+
+  # Helper to decode instance from various formats
+  defp decode_instance(%Instance{} = instance), do: instance
+
+  defp decode_instance(data) when is_binary(data) or is_map(data) do
+    Instance.decode!(data)
   end
 end

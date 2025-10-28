@@ -23,6 +23,7 @@ defmodule DynamicForm.MixProject do
       {:phoenix_html, "~> 4.0"},
       {:ecto, "~> 3.0"},
       {:gettext, "~> 0.26"},
+      {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
