@@ -660,41 +660,41 @@ defmodule Example.FormInstances do
   - Field validations
   """
   def showcase_form do
-    %Instance{
+    %{
       id: "showcase-form",
       name: "DynamicForm Feature Showcase",
       description: "A comprehensive example showcasing all DynamicForm capabilities.",
       items: [
-        %Instance.Element{
+        %{
           id: "intro-heading",
           type: "heading",
           content: "Welcome to DynamicForm",
           metadata: %{"level" => "h2"}
         },
-        %Instance.Element{
+        %{
           id: "intro-paragraph",
           type: "paragraph",
           content:
             "This form demonstrates all the features of the DynamicForm library including elements, groups, conditional visibility, and various field types.",
           metadata: %{"class" => "text-gray-600 text-lg"}
         },
-        %Instance.Element{
+        %{
           id: "divider-intro",
           type: "divider"
         },
-        %Instance.Element{
+        %{
           id: "personal-heading",
           type: "heading",
           content: "Personal Information",
           metadata: %{"level" => "h3"}
         },
-        %Instance.Element{
+        %{
           id: "name-group",
           type: "group",
           content: "Full Name",
           metadata: %{"layout" => "grid-2"},
           items: [
-            %Instance.Field{
+            %{
               id: "first_name",
               name: "first_name",
               type: "string",
@@ -702,10 +702,10 @@ defmodule Example.FormInstances do
               placeholder: "John",
               required: true,
               validations: [
-                %Instance.Validation{type: "min_length", value: 2}
+                %{type: "min_length", value: 2}
               ]
             },
-            %Instance.Field{
+            %{
               id: "last_name",
               name: "last_name",
               type: "string",
@@ -713,12 +713,12 @@ defmodule Example.FormInstances do
               placeholder: "Doe",
               required: true,
               validations: [
-                %Instance.Validation{type: "min_length", value: 2}
+                %{type: "min_length", value: 2}
               ]
             }
           ]
         },
-        %Instance.Field{
+        %{
           id: "email",
           name: "email",
           type: "email",
@@ -726,10 +726,10 @@ defmodule Example.FormInstances do
           placeholder: "john.doe@example.com",
           required: true,
           validations: [
-            %Instance.Validation{type: "email_format"}
+            %{type: "email_format"}
           ]
         },
-        %Instance.Element{
+        %{
           id: "email-prefs-group",
           type: "group",
           content: "Email Preferences",
@@ -739,13 +739,13 @@ defmodule Example.FormInstances do
             operator: "valid"
           },
           items: [
-            %Instance.Field{
+            %{
               id: "email_notifications",
               name: "email_notifications",
               type: "boolean",
               label: "Receive email notifications"
             },
-            %Instance.Field{
+            %{
               id: "email_frequency",
               name: "email_frequency",
               type: "select",
@@ -758,22 +758,22 @@ defmodule Example.FormInstances do
             }
           ]
         },
-        %Instance.Element{
+        %{
           id: "divider-1",
           type: "divider"
         },
-        %Instance.Element{
+        %{
           id: "address-heading",
           type: "heading",
           content: "Address",
           metadata: %{"level" => "h3"}
         },
-        %Instance.Element{
+        %{
           id: "address-group",
           type: "group",
           metadata: %{"layout" => "vertical"},
           items: [
-            %Instance.Field{
+            %{
               id: "street",
               name: "street",
               type: "string",
@@ -781,12 +781,12 @@ defmodule Example.FormInstances do
               placeholder: "123 Main St",
               required: true
             },
-            %Instance.Element{
+            %{
               id: "city-state-zip-group",
               type: "group",
               metadata: %{"layout" => "grid-3"},
               items: [
-                %Instance.Field{
+                %{
                   id: "city",
                   name: "city",
                   type: "string",
@@ -794,7 +794,7 @@ defmodule Example.FormInstances do
                   placeholder: "San Francisco",
                   required: true
                 },
-                %Instance.Field{
+                %{
                   id: "state",
                   name: "state",
                   type: "string",
@@ -802,10 +802,10 @@ defmodule Example.FormInstances do
                   placeholder: "CA",
                   required: true,
                   validations: [
-                    %Instance.Validation{type: "max_length", value: 2}
+                    %{type: "max_length", value: 2}
                   ]
                 },
-                %Instance.Field{
+                %{
                   id: "zip",
                   name: "zip",
                   type: "string",
@@ -813,25 +813,25 @@ defmodule Example.FormInstances do
                   placeholder: "94102",
                   required: true,
                   validations: [
-                    %Instance.Validation{type: "min_length", value: 5},
-                    %Instance.Validation{type: "max_length", value: 10}
+                    %{type: "min_length", value: 5},
+                    %{type: "max_length", value: 10}
                   ]
                 }
               ]
             }
           ]
         },
-        %Instance.Element{
+        %{
           id: "divider-2",
           type: "divider"
         },
-        %Instance.Element{
+        %{
           id: "feedback-heading",
           type: "heading",
           content: "Feedback",
           metadata: %{"level" => "h3"}
         },
-        %Instance.Field{
+        %{
           id: "category",
           name: "category",
           type: "select",
@@ -843,7 +843,7 @@ defmodule Example.FormInstances do
             {"General Feedback", "general"}
           ]
         },
-        %Instance.Field{
+        %{
           id: "rating",
           name: "rating",
           type: "decimal",
@@ -851,10 +851,10 @@ defmodule Example.FormInstances do
           placeholder: "8",
           required: true,
           validations: [
-            %Instance.Validation{type: "numeric_range", min: 1, max: 10}
+            %{type: "numeric_range", min: 1, max: 10}
           ]
         },
-        %Instance.Field{
+        %{
           id: "comments",
           name: "comments",
           type: "textarea",
@@ -862,11 +862,11 @@ defmodule Example.FormInstances do
           placeholder: "Tell us more...",
           required: true,
           validations: [
-            %Instance.Validation{type: "min_length", value: 10},
-            %Instance.Validation{type: "max_length", value: 500}
+            %{type: "min_length", value: 10},
+            %{type: "max_length", value: 500}
           ]
         },
-        %Instance.Element{
+        %{
           id: "thank-you",
           type: "paragraph",
           content: "Thank you for providing your feedback!",
@@ -877,7 +877,7 @@ defmodule Example.FormInstances do
           }
         }
       ],
-      backend: %Instance.Backend{
+      backend: %{
         module: Example.TestBackend,
         function: :submit,
         config: [],

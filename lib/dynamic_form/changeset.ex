@@ -16,7 +16,7 @@ defmodule DynamicForm.Changeset do
 
   ## Parameters
 
-    * `instance` - The DynamicForm.Instance configuration
+    * `instance` - The DynamicForm.Instance struct
     * `params` - The form parameters to validate (defaults to empty map)
 
   ## Returns
@@ -29,6 +29,14 @@ defmodule DynamicForm.Changeset do
       iex> changeset = DynamicForm.Changeset.create_changeset(instance, %{"email" => "test@example.com"})
       iex> changeset.valid?
       true
+
+  ## Note
+
+  If you have JSON or a map, decode it to an Instance struct first:
+
+      # Decode at the edge
+      instance = DynamicForm.Instance.decode!(json_or_map)
+      changeset = DynamicForm.Changeset.create_changeset(instance, params)
   """
   def create_changeset(%Instance{} = instance, params \\ %{}) do
     fields = get_fields(instance.items)
