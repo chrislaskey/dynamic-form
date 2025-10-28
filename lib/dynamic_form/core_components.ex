@@ -666,9 +666,9 @@ defmodule DynamicForm.CoreComponents do
     # with our gettext backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
-      Gettext.dngettext(ExampleWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(DynamicForm.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(ExampleWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(DynamicForm.Gettext, "errors", msg, opts)
     end
   end
 
