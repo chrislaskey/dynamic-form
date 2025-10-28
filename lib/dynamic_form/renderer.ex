@@ -503,6 +503,100 @@ defmodule DynamicForm.Renderer do
     """
   end
 
+  # Render a radio-group field
+  defp render_field(%Instance.Field{type: "radio-group"} = field, form, opts) do
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
+    field_atom = String.to_atom(field.name)
+    options = field.options || []
+
+    # Get style from metadata and convert to atom if needed
+    style =
+      case get_in(field.metadata || %{}, ["style"]) do
+        "horizontal" -> :horizontal
+        "vertical" -> :vertical
+        :horizontal -> :horizontal
+        :vertical -> :vertical
+        _ -> :vertical
+      end
+
+    # Build label with required indicator
+    label =
+      if field.required do
+        Phoenix.HTML.raw(
+          "#{field.label || String.capitalize(field.name)} <span class=\"text-red-500\">*</span>"
+        )
+      else
+        field.label || String.capitalize(field.name)
+      end
+
+    assigns = %{
+      field: field,
+      form: form,
+      field_atom: field_atom,
+      disabled: disabled,
+      options: options,
+      label: label,
+      style: style
+    }
+
+    ~H"""
+    <div class="mb-4">
+      <CoreComponents.input
+        field={@form[@field_atom]}
+        type="radio-group"
+        label={@label}
+        options={@options}
+        style={@style}
+        disabled={@disabled}
+      />
+      <%= if @field.help_text do %>
+        <p class="mt-2 text-sm text-gray-500"><%= @field.help_text %></p>
+      <% end %>
+    </div>
+    """
+  end
+
+  # Render a standalone radio field (for custom layouts)
+  defp render_field(%Instance.Field{type: "radio"} = field, form, opts) do
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
+    field_atom = String.to_atom(field.name)
+    value = field.default_value || get_in(field.metadata || %{}, ["value"]) || ""
+    current_value = Phoenix.HTML.Form.input_value(form, field_atom)
+    checked = to_string(current_value) == to_string(value)
+
+    label = field.label || String.capitalize(field.name)
+
+    assigns = %{
+      field: field,
+      form: form,
+      field_atom: field_atom,
+      disabled: disabled,
+      label: label,
+      value: value,
+      checked: checked
+    }
+
+    ~H"""
+    <div class="mb-4">
+      <label class="flex items-center text-sm leading-6 text-zinc-600">
+        <CoreComponents.input
+          field={@form[@field_atom]}
+          type="radio"
+          value={@value}
+          checked={@checked}
+          disabled={@disabled}
+        />
+        {@label}
+      </label>
+      <%= if @field.help_text do %>
+        <p class="mt-2 ml-7 text-sm text-gray-500"><%= @field.help_text %></p>
+      <% end %>
+    </div>
+    """
+  end
+
   # Fallback for unknown field types
   defp render_field(field, _form, _opts) do
     assigns = %{field: field}

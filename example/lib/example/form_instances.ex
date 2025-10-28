@@ -551,6 +551,35 @@ defmodule Example.FormInstances do
                 {"Weekly", "weekly"},
                 {"Monthly", "monthly"}
               ]
+            },
+            %Instance.Field{
+              id: "notification_method",
+              name: "notification_method",
+              type: "radio-group",
+              label: "Notification Method",
+              help_text: "Choose how you'd like to receive notifications",
+              required: true,
+              metadata: %{"style" => "vertical"},
+              options: [
+                {"Email Only", "email"},
+                {"SMS Only", "sms"},
+                {"Both Email and SMS", "both"},
+                {"None", "none"}
+              ]
+            },
+            %Instance.Field{
+              id: "theme",
+              name: "theme",
+              type: "radio-group",
+              label: "Theme Preference",
+              help_text: "Select your preferred color theme",
+              required: false,
+              metadata: %{"style" => "horizontal"},
+              options: [
+                {"Light", "light"},
+                {"Dark", "dark"},
+                {"Auto", "auto"}
+              ]
             }
           ]
         },

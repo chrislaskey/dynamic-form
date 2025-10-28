@@ -107,6 +107,8 @@ defmodule DynamicForm.Changeset do
   defp map_field_type("decimal"), do: :decimal
   defp map_field_type("boolean"), do: :boolean
   defp map_field_type("select"), do: :string
+  defp map_field_type("radio"), do: :string
+  defp map_field_type("radio-group"), do: :string
   defp map_field_type(type) when is_binary(type), do: String.to_atom(type)
   defp map_field_type(type) when is_atom(type), do: type
 

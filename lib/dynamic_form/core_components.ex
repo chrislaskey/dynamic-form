@@ -277,7 +277,7 @@ defmodule DynamicForm.CoreComponents do
   attr(:type, :string,
     default: "text",
     values: ~w(checkbox color date datetime-local email file month number password
-               range search select tel text textarea time url week)
+               range search select tel text textarea time url week radio radio-group)
   )
 
   attr(:field, Phoenix.HTML.FormField,
@@ -289,6 +289,12 @@ defmodule DynamicForm.CoreComponents do
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
   attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
   attr(:multiple, :boolean, default: false, doc: "the multiple flag for select inputs")
+
+  # Custom attribute: style
+  attr(:style, :atom,
+    default: :vertical,
+    doc: "the layout style for radio-group inputs (:vertical or :horizontal)"
+  )
 
   attr(:rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -365,6 +371,63 @@ defmodule DynamicForm.CoreComponents do
         ]}
         {@rest}
       >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
+  # Custom input type: radio (standalone radio button for custom layouts)
+  def input(%{type: "radio"} = assigns) do
+    ~H"""
+    <input
+      type="radio"
+      id={@id}
+      name={@name}
+      value={@value}
+      checked={@checked || false}
+      class={[
+        "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
+        "placeholder:text-gray-400",
+        "checked:border-zinc-900 checked:bg-zinc-900",
+        "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
+        "focus:outline-none focus:ring-1 focus:ring-zinc-900"
+      ]}
+      {@rest}
+    />
+    """
+  end
+
+  # Custom input type: radio-group (renders a labeled group of radio buttons)
+  def input(%{type: "radio-group"} = assigns) do
+    ~H"""
+    <div>
+      <.label for={@id}>{@label}</.label>
+      <div class={[
+        "flex gap-4 mt-2",
+        @style == :vertical && "flex-col",
+        @style == :horizontal && "flex-row items-center"
+      ]}>
+        <%= for {text, value} <- @options do %>
+          <label class="flex items-center text-sm leading-6 text-zinc-600">
+            <input
+              type="radio"
+              id={"#{@id}-#{value}"}
+              name={@name}
+              value={value}
+              checked={to_string(@value) == to_string(value)}
+              class={[
+                "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
+                "placeholder:text-gray-400",
+                "checked:border-zinc-900 checked:bg-zinc-900",
+                "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
+                "focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              ]}
+              {@rest}
+            />
+            {text}
+          </label>
+        <% end %>
+      </div>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -684,7 +747,8 @@ defmodule DynamicForm.CoreComponents do
   @doc """
   Translates the errors for a field from a keyword list of errors.
   """
-  def translate_errors(errors, field, gettext_backend \\ DynamicForm.Gettext) when is_list(errors) do
+  def translate_errors(errors, field, gettext_backend \\ DynamicForm.Gettext)
+      when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts}, gettext_backend)
   end
 
