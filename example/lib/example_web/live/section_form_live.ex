@@ -19,7 +19,7 @@ defmodule ExampleWeb.SectionFormLive do
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Section Element Demo</h1>
         <p class="mt-2 text-gray-600">
-          This form demonstrates the new Section element for organizing form content.
+          This form demonstrates the new Section element for organizing form contents.
         </p>
         <p class="mt-2 text-sm text-indigo-600">
           <strong>New:</strong>
