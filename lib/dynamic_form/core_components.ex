@@ -689,6 +689,73 @@ defmodule DynamicForm.CoreComponents do
   # ============================================================================
 
   @doc """
+  Renders a group container with flexible layout options.
+
+  A group is a layout element that arranges multiple items (fields or elements)
+  in various configurations like horizontal, vertical, or grid layouts. Groups
+  are typically used within sections or at the form root level.
+
+  ## Layout Options
+
+  - `"horizontal"` - Items arranged in a row (default)
+  - `"vertical"` - Items stacked vertically
+  - `"grid-2"` - 2-column grid (1 column on mobile)
+  - `"grid-3"` - 3-column grid (1 column on mobile)
+  - `"grid-4"` - 4-column grid (1 column on mobile)
+
+  ## Examples
+
+      <.group>
+        <.input field={@form[:first_name]} label="First Name" />
+        <.input field={@form[:last_name]} label="Last Name" />
+      </.group>
+
+      <.group title="Contact Information" layout="grid-2">
+        <.input field={@form[:email]} label="Email" />
+        <.input field={@form[:phone]} label="Phone" />
+      </.group>
+
+      <.group layout="vertical" class="mt-4">
+        <.input field={@form[:street]} label="Street" />
+        <.input field={@form[:city]} label="City" />
+      </.group>
+  """
+  attr(:title, :string, default: nil, doc: "Optional group title")
+
+  attr(:layout, :string,
+    default: "horizontal",
+    doc: "Layout style: horizontal, vertical, grid-2, grid-3, grid-4"
+  )
+
+  attr(:class, :string, default: nil, doc: "Additional CSS classes")
+  slot(:inner_block, required: true)
+
+  def group(assigns) do
+    layout_class =
+      case assigns.layout do
+        "horizontal" -> "flex flex-row gap-4"
+        "grid-2" -> "grid grid-cols-1 md:grid-cols-2 gap-4"
+        "grid-3" -> "grid grid-cols-1 md:grid-cols-3 gap-4"
+        "grid-4" -> "grid grid-cols-1 md:grid-cols-4 gap-4"
+        "vertical" -> "flex flex-col gap-4"
+        _ -> "flex flex-row gap-4"
+      end
+
+    assigns = assign(assigns, :layout_class, layout_class)
+
+    ~H"""
+    <div class={["mb-6", @class]}>
+      <h3 :if={@title} class="font-semibold text-gray-900 mb-4">
+        <%= @title %>
+      </h3>
+      <div class={@layout_class}>
+        <%= render_slot(@inner_block) %>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a section container with optional title.
 
   A section is a visual grouping element that wraps content in a card-like
@@ -709,9 +776,9 @@ defmodule DynamicForm.CoreComponents do
         <.input field={@form[:street]} label="Street" />
       </.section>
   """
-  attr :title, :string, default: nil, doc: "Optional section title"
-  attr :class, :string, default: nil, doc: "Additional CSS classes"
-  slot :inner_block, required: true
+  attr(:title, :string, default: nil, doc: "Optional section title")
+  attr(:class, :string, default: nil, doc: "Additional CSS classes")
+  slot(:inner_block, required: true)
 
   def section(assigns) do
     ~H"""

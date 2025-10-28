@@ -185,42 +185,26 @@ defmodule DynamicForm.Renderer do
     content = element.content
     items = element.items || []
 
-    # Determine grid/layout classes
-    layout_class =
-      case layout do
-        "horizontal" -> "flex flex-row gap-4"
-        "grid-2" -> "grid grid-cols-1 md:grid-cols-2 gap-4"
-        "grid-3" -> "grid grid-cols-1 md:grid-cols-3 gap-4"
-        "grid-4" -> "grid grid-cols-1 md:grid-cols-4 gap-4"
-        "vertical" -> "flex flex-col gap-4"
-        _ -> "flex flex-row gap-4"
-      end
-
     assigns = %{
       element: element,
       content: content,
-      layout_class: layout_class,
+      layout: layout,
       items: items,
       form: form,
       opts: opts
     }
 
     ~H"""
-    <div class="mb-6 rounded-lg border border-gray-200 p-4">
-      <%= if @content do %>
-        <h3 class="text-lg font-semibold text-gray-900 mb-4"><%= @content %></h3>
-      <% end %>
-      <div class={@layout_class}>
-        <%= for item <- @items do %>
-          <%= case item do %>
-            <% %Instance.Field{} = field -> %>
-              <%= render_field(field, @form, @opts) %>
-            <% %Instance.Element{} = nested_element -> %>
-              <%= render_element(nested_element, @form, @opts) %>
-          <% end %>
+    <CoreComponents.group title={@content} layout={@layout}>
+      <%= for item <- @items do %>
+        <%= case item do %>
+          <% %Instance.Field{} = field -> %>
+            <%= render_field(field, @form, @opts) %>
+          <% %Instance.Element{} = nested_element -> %>
+            <%= render_element(nested_element, @form, @opts) %>
         <% end %>
-      </div>
-    </div>
+      <% end %>
+    </CoreComponents.group>
     """
   end
 
@@ -242,10 +226,7 @@ defmodule DynamicForm.Renderer do
     }
 
     ~H"""
-    <div class={["mb-6 rounded-lg border border-gray-200 bg-white p-6", @custom_class]}>
-      <%= if @content do %>
-        <h3 class="text-lg font-semibold text-gray-900 mb-4"><%= @content %></h3>
-      <% end %>
+    <CoreComponents.section title={@content} class={@custom_class}>
       <%= for item <- @items do %>
         <%= case item do %>
           <% %Instance.Field{} = field -> %>
@@ -254,7 +235,7 @@ defmodule DynamicForm.Renderer do
             <%= render_element(nested_element, @form, @opts) %>
         <% end %>
       <% end %>
-    </div>
+    </CoreComponents.section>
     """
   end
 
