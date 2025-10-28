@@ -542,9 +542,8 @@ defmodule DynamicForm.Renderer do
 
     ~H"""
     <div class="mb-4">
-      <CoreComponents.input
+      <CoreComponents.input_radio_group
         field={@form[@field_atom]}
-        type="radio-group"
         label={@label}
         options={@options}
         style={@style}
@@ -568,22 +567,26 @@ defmodule DynamicForm.Renderer do
 
     label = field.label || String.capitalize(field.name)
 
+    # Get id for the radio input
+    id = "#{field.id}-#{value}"
+    name = field.name
+
     assigns = %{
       field: field,
-      form: form,
-      field_atom: field_atom,
       disabled: disabled,
       label: label,
       value: value,
-      checked: checked
+      checked: checked,
+      id: id,
+      name: name
     }
 
     ~H"""
     <div class="mb-4">
       <label class="flex items-center text-sm leading-6 text-zinc-600">
-        <CoreComponents.input
-          field={@form[@field_atom]}
-          type="radio"
+        <CoreComponents.input_radio
+          id={@id}
+          name={@name}
           value={@value}
           checked={@checked}
           disabled={@disabled}

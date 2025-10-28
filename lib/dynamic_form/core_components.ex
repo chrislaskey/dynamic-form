@@ -289,12 +289,7 @@ defmodule DynamicForm.CoreComponents do
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
   attr(:options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2")
   attr(:multiple, :boolean, default: false, doc: "the multiple flag for select inputs")
-
-  # Custom attribute: style
-  attr(:style, :atom,
-    default: :vertical,
-    doc: "the layout style for radio-group inputs (:vertical or :horizontal)"
-  )
+  attr(:style, :atom, doc: "the layout style for radio-group inputs (:vertical or :horizontal)")
 
   attr(:rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -376,62 +371,9 @@ defmodule DynamicForm.CoreComponents do
     """
   end
 
-  # Custom input type: radio (standalone radio button for custom layouts)
-  def input(%{type: "radio"} = assigns) do
-    ~H"""
-    <input
-      type="radio"
-      id={@id}
-      name={@name}
-      value={@value}
-      checked={@checked || false}
-      class={[
-        "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
-        "placeholder:text-gray-400",
-        "checked:border-zinc-900 checked:bg-zinc-900",
-        "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
-        "focus:outline-none focus:ring-1 focus:ring-zinc-900"
-      ]}
-      {@rest}
-    />
-    """
-  end
-
-  # Custom input type: radio-group (renders a labeled group of radio buttons)
-  def input(%{type: "radio-group"} = assigns) do
-    ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
-      <div class={[
-        "flex gap-4 mt-2",
-        @style == :vertical && "flex-col",
-        @style == :horizontal && "flex-row items-center"
-      ]}>
-        <%= for {text, value} <- @options do %>
-          <label class="flex items-center text-sm leading-6 text-zinc-600">
-            <input
-              type="radio"
-              id={"#{@id}-#{value}"}
-              name={@name}
-              value={value}
-              checked={to_string(@value) == to_string(value)}
-              class={[
-                "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
-                "placeholder:text-gray-400",
-                "checked:border-zinc-900 checked:bg-zinc-900",
-                "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
-                "focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              ]}
-              {@rest}
-            />
-            {text}
-          </label>
-        <% end %>
-      </div>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
+  # Custom input types - delegate to dedicated functions in CUSTOM COMPONENTS section
+  def input(%{type: "radio"} = assigns), do: input_radio(assigns)
+  def input(%{type: "radio-group"} = assigns), do: input_radio_group(assigns)
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
@@ -856,13 +798,122 @@ defmodule DynamicForm.CoreComponents do
   def section(assigns) do
     ~H"""
     <div class={[
-      "rounded-lg border border-gray-200 bg-white p-6",
+      "my-6 rounded-lg border border-gray-200 bg-white p-6",
       @class
     ]}>
       <h3 :if={@title} class="text-lg font-semibold text-gray-900 mb-4">
         <%= @title %>
       </h3>
       <%= render_slot(@inner_block) %>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a standalone radio button input.
+
+  This is typically used for custom layouts where you need individual radio buttons.
+  For most use cases, use `input_radio_group/1` instead.
+
+  ## Examples
+
+      <.input_radio
+        id="option-1"
+        name="choice"
+        value="option_1"
+        checked={@form[:choice].value == "option_1"}
+      />
+  """
+  attr(:id, :any, required: true)
+  attr(:name, :any, required: true)
+  attr(:value, :any, required: true)
+  attr(:checked, :boolean, default: false)
+  attr(:rest, :global, include: ~w(disabled))
+
+  def input_radio(assigns) do
+    ~H"""
+    <input
+      type="radio"
+      id={@id}
+      name={@name}
+      value={@value}
+      checked={@checked}
+      class={[
+        "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
+        "placeholder:text-gray-400",
+        "checked:border-zinc-900 checked:bg-zinc-900",
+        "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
+        "focus:outline-none focus:ring-1 focus:ring-zinc-900"
+      ]}
+      {@rest}
+    />
+    """
+  end
+
+  @doc """
+  Renders a labeled group of radio buttons.
+
+  ## Examples
+
+      <.input_radio_group
+        field={@form[:notification_method]}
+        label="Notification Method"
+        options={[{"Email", "email"}, {"SMS", "sms"}]}
+        style={:vertical}
+      />
+  """
+  attr(:id, :any, default: nil)
+  attr(:name, :any)
+  attr(:label, :string, default: nil)
+  attr(:value, :any)
+  attr(:field, Phoenix.HTML.FormField)
+  attr(:errors, :list, default: [])
+  attr(:options, :list, required: true, doc: "List of {label, value} tuples for radio options")
+  attr(:style, :atom, default: :vertical, doc: "Layout style: :vertical or :horizontal")
+  attr(:rest, :global, include: ~w(disabled))
+
+  def input_radio_group(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
+    assigns
+    |> assign(field: nil, id: assigns.id || field.id)
+    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign_new(:name, fn -> field.name end)
+    |> assign_new(:value, fn -> field.value end)
+    |> input_radio_group()
+  end
+
+  def input_radio_group(assigns) do
+    ~H"""
+    <div>
+      <.label for={@id}>{@label}</.label>
+      <div class={[
+        "flex gap-4 mt-2",
+        @style == :vertical && "flex-col",
+        @style == :horizontal && "flex-row items-center"
+      ]}>
+        <%= for {text, value} <- @options do %>
+          <label class="flex items-center text-sm leading-6 text-zinc-600">
+            <input
+              type="radio"
+              id={"#{@id}-#{value}"}
+              name={@name}
+              value={value}
+              checked={to_string(@value) == to_string(value)}
+              class={[
+                "size-5 mr-2 border-zinc-300 text-zinc-900 hover:border-zinc-900",
+                "placeholder:text-gray-400",
+                "checked:border-zinc-900 checked:bg-zinc-900",
+                "disabled:cursor-default disabled:border-zinc-400 disabled:bg-zinc-400",
+                "focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              ]}
+              {@rest}
+            />
+            {text}
+          </label>
+        <% end %>
+      </div>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
