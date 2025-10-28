@@ -29,6 +29,17 @@ defmodule ExampleWeb.SectionFormLive do
         <p class="mt-2 text-gray-600">
           This form demonstrates the new Section element for organizing form content.
         </p>
+        <p class="mt-2 text-sm text-indigo-600">
+          <strong>New:</strong>
+          This form uses an external submit button (shown below) instead of a button inside the form.
+        </p>
+      </div>
+
+      <%!-- External submit button at the top --%>
+      <div class="mb-6 flex justify-end">
+        <DynamicForm.submit_button form="section-form" class="shadow-lg">
+          💾 Save Profile
+        </DynamicForm.submit_button>
       </div>
 
       <div class="rounded-lg bg-gray-50 shadow-sm ring-1 ring-gray-900/5 p-6">
@@ -39,6 +50,7 @@ defmodule ExampleWeb.SectionFormLive do
           phx_submit="submit"
           phx_change="validate"
           form_id="section-form"
+          hide_submit={true}
           gettext={ExampleWeb.Gettext}
         />
       </div>
@@ -76,6 +88,16 @@ defmodule ExampleWeb.SectionFormLive do
           </div>
 
           <div>
+            <strong>✨ External Submit Button:</strong>
+            <p class="mt-1">
+              This form demonstrates the new external submit button feature. The submit button
+              at the top of the page is connected to the form using the HTML <code>form</code>
+              attribute, allowing you to place submit buttons anywhere on the page - not just
+              inside the form. Perfect for sticky footers, modal headers, or complex layouts!
+            </p>
+          </div>
+
+          <div>
             <strong>Sections in this Form:</strong>
             <ul class="list-disc list-inside ml-4 mt-1">
               <li><strong>Personal Information</strong> - Contains name group and email field</li>
@@ -103,10 +125,29 @@ defmodule ExampleWeb.SectionFormLive do
       </div>
 
       <div class="mt-8 rounded-lg bg-gray-50 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Code Example</h3>
-        <div class="text-sm text-gray-800">
-          <p class="mb-2">Example of defining a section in your form instance:</p>
-          <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&#37;Instance.Element&#123;
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Code Examples</h3>
+        <div class="text-sm text-gray-800 space-y-4">
+          <div>
+            <p class="mb-2 font-semibold">Using an External Submit Button:</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&lt;!-- External submit button anywhere on the page --&gt;
+              &lt;DynamicForm.submit_button form="section-form"&gt;
+                Save Profile
+              &lt;/DynamicForm.submit_button&gt;
+
+              &lt;!-- Form with hide_submit set to true --&gt;
+              &lt;DynamicForm.Renderer.render
+                instance=&#123;@form_instance&#125;
+                form=&#123;@form&#125;
+                form_id="section-form"
+                hide_submit=&#123;true&#125;
+                phx_submit="submit"
+                phx_change="validate"
+              /&gt;</code></pre>
+          </div>
+
+          <div>
+            <p class="mb-2 font-semibold">Example of defining a section in your form instance:</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto text-xs font-mono"><code>&#37;Instance.Element&#123;
             id: "personal-section",
             type: "section",
             content: "Personal Information",
@@ -127,6 +168,7 @@ defmodule ExampleWeb.SectionFormLive do
               &#125;
             ]
           &#125;</code></pre>
+          </div>
         </div>
       </div>
     </div>

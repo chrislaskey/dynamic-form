@@ -15,6 +15,31 @@ defmodule DynamicForm.Renderer do
         phx_change="validate"
         form_id="my-dynamic-form"
       />
+
+  ## External Submit Button
+
+  You can place a submit button outside the form element by:
+
+  1. Setting `hide_submit` to `true`
+  2. Using `DynamicForm.submit_button/1` anywhere on the page with the form's ID
+
+  ### Example
+
+      # Form without submit button
+      <DynamicForm.Renderer.render
+        instance={@form_instance}
+        form={@form}
+        form_id="my-form"
+        hide_submit={true}
+        phx_submit="submit"
+      />
+
+      # Submit button elsewhere on the page
+      <div class="sticky bottom-0">
+        <DynamicForm.submit_button form="my-form">
+          Save Changes
+        </DynamicForm.submit_button>
+      </div>
   """
 
   use Phoenix.Component
@@ -35,6 +60,11 @@ defmodule DynamicForm.Renderer do
   attr(:target, :any, default: nil, doc: "Phoenix LiveView target for events")
   attr(:form_id, :string, default: "dynamic-form", doc: "HTML ID for the form element")
   attr(:disabled, :boolean, default: false, doc: "Whether the form is disabled")
+
+  attr(:hide_submit, :boolean,
+    default: false,
+    doc: "Whether to hide the submit button (useful when using an external submit button)"
+  )
 
   attr(:gettext, :atom,
     default: DynamicForm.Gettext,
@@ -58,7 +88,7 @@ defmodule DynamicForm.Renderer do
         <%= render_item(item, f, disabled: @disabled, gettext: @gettext) %>
       <% end %>
 
-      <div class="mt-6 flex items-center justify-end gap-x-6">
+      <div :if={!@hide_submit} class="mt-6 flex items-center justify-end gap-x-6">
         <button
           type="submit"
           disabled={@disabled}

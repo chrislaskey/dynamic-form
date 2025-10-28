@@ -244,6 +244,67 @@ defmodule DynamicForm.CoreComponents do
   end
 
   @doc """
+  Renders a submit button that can be placed outside a form element.
+
+  Uses the HTML `form` attribute to associate the button with a form by its ID.
+  This allows the submit button to be placed anywhere on the page, not just
+  inside the form element.
+
+  ## Examples
+
+      # Form with an ID
+      <.form id="my-form" for={@form} phx-submit="save">
+        <.input field={@form[:name]} label="Name" />
+      </.form>
+
+      # Submit button anywhere on the page
+      <.submit_button form="my-form">
+        Save Changes
+      </.submit_button>
+
+      # In a modal footer
+      <.modal id="edit-modal">
+        <.form id="edit-form" for={@form} phx-submit="save">
+          <.input field={@form[:title]} label="Title" />
+        </.form>
+        <:actions>
+          <.submit_button form="edit-form">Save</.submit_button>
+        </:actions>
+      </.modal>
+
+  ## Attributes
+
+    * `form` - The ID of the form element to submit (required)
+    * `class` - Additional CSS classes to apply to the button
+    * `disabled` - Whether the button is disabled
+  """
+  attr(:form, :string, required: true, doc: "The ID of the form element to submit")
+  attr(:class, :string, default: nil, doc: "Additional CSS classes")
+  attr(:disabled, :boolean, default: false, doc: "Whether the button is disabled")
+  attr(:rest, :global, include: ~w(name value))
+
+  slot(:inner_block, required: true)
+
+  def submit_button(assigns) do
+    ~H"""
+    <button
+      type="submit"
+      form={@form}
+      disabled={@disabled}
+      class={[
+        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
+        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        @class
+      ]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,
@@ -861,6 +922,7 @@ defmodule DynamicForm.CoreComponents do
         options={[{"Email", "email"}, {"SMS", "sms"}]}
         style={:vertical}
       />
+
   """
   attr(:id, :any, default: nil)
   attr(:name, :any)
