@@ -224,6 +224,40 @@ defmodule DynamicForm.Renderer do
     """
   end
 
+  defp render_element(%Instance.Element{type: "section"} = element, form, opts) do
+    content = element.content
+    items = element.items || []
+    custom_class = get_in(element.metadata || %{}, ["class"])
+
+    # Filter visible items within the section
+    visible_section_items = visible_items(items, form)
+
+    assigns = %{
+      element: element,
+      content: content,
+      custom_class: custom_class,
+      items: visible_section_items,
+      form: form,
+      opts: opts
+    }
+
+    ~H"""
+    <div class={["mb-6 rounded-lg border border-gray-200 bg-white p-6", @custom_class]}>
+      <%= if @content do %>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4"><%= @content %></h3>
+      <% end %>
+      <%= for item <- @items do %>
+        <%= case item do %>
+          <% %Instance.Field{} = field -> %>
+            <%= render_field(field, @form, @opts) %>
+          <% %Instance.Element{} = nested_element -> %>
+            <%= render_element(nested_element, @form, @opts) %>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
+
   # Fallback for unknown element types
   defp render_element(element, _form, _opts) do
     assigns = %{element: element}

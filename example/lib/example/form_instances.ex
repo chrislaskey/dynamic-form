@@ -418,10 +418,212 @@ defmodule Example.FormInstances do
   end
 
   @doc """
+  Returns a form demonstrating section elements.
+
+  This form demonstrates:
+  - Section elements with titles
+  - Sections containing multiple fields and groups
+  - Nested sections
+  - Sections with custom classes
+  - Conditional section visibility
+  """
+  def section_form do
+    %Instance{
+      id: "section-form",
+      name: "User Profile Form",
+      description: "Complete your profile information using sections.",
+      items: [
+        %Instance.Element{
+          id: "personal-section",
+          type: "section",
+          content: "Personal Information",
+          items: [
+            %Instance.Element{
+              id: "name-group",
+              type: "group",
+              content: "Full Name",
+              metadata: %{"layout" => "grid-2"},
+              items: [
+                %Instance.Field{
+                  id: "first_name",
+                  name: "first_name",
+                  type: "string",
+                  label: "First Name",
+                  placeholder: "John",
+                  required: true
+                },
+                %Instance.Field{
+                  id: "last_name",
+                  name: "last_name",
+                  type: "string",
+                  label: "Last Name",
+                  placeholder: "Doe",
+                  required: true
+                }
+              ]
+            },
+            %Instance.Field{
+              id: "email",
+              name: "email",
+              type: "email",
+              label: "Email Address",
+              placeholder: "john.doe@example.com",
+              required: true,
+              validations: [
+                %Instance.Validation{type: "email_format"}
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "address-section",
+          type: "section",
+          content: "Address",
+          metadata: %{"class" => "mt-6"},
+          items: [
+            %Instance.Field{
+              id: "street",
+              name: "street",
+              type: "string",
+              label: "Street Address",
+              placeholder: "123 Main St",
+              required: true
+            },
+            %Instance.Element{
+              id: "city-state-group",
+              type: "group",
+              metadata: %{"layout" => "grid-3"},
+              items: [
+                %Instance.Field{
+                  id: "city",
+                  name: "city",
+                  type: "string",
+                  label: "City",
+                  placeholder: "San Francisco",
+                  required: true
+                },
+                %Instance.Field{
+                  id: "state",
+                  name: "state",
+                  type: "string",
+                  label: "State",
+                  placeholder: "CA",
+                  required: true
+                },
+                %Instance.Field{
+                  id: "zip",
+                  name: "zip",
+                  type: "string",
+                  label: "ZIP Code",
+                  placeholder: "94102",
+                  required: true
+                }
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "preferences-section",
+          type: "section",
+          content: "Preferences",
+          metadata: %{"class" => "mt-6"},
+          items: [
+            %Instance.Field{
+              id: "newsletter",
+              name: "newsletter",
+              type: "boolean",
+              label: "Subscribe to newsletter",
+              help_text: "Receive weekly updates and news"
+            },
+            %Instance.Field{
+              id: "newsletter_frequency",
+              name: "newsletter_frequency",
+              type: "select",
+              label: "Newsletter Frequency",
+              required: false,
+              visible_when: %{
+                field: "newsletter",
+                operator: "equals",
+                value: true
+              },
+              options: [
+                {"Daily", "daily"},
+                {"Weekly", "weekly"},
+                {"Monthly", "monthly"}
+              ]
+            }
+          ]
+        },
+        %Instance.Element{
+          id: "nested-section-parent",
+          type: "section",
+          content: "Additional Information",
+          metadata: %{"class" => "mt-6"},
+          items: [
+            %Instance.Element{
+              id: "bio-heading",
+              type: "heading",
+              content: "Biography",
+              metadata: %{"level" => "h4"}
+            },
+            %Instance.Field{
+              id: "bio",
+              name: "bio",
+              type: "textarea",
+              label: "Tell us about yourself",
+              placeholder: "Write a short bio...",
+              required: false
+            },
+            %Instance.Element{
+              id: "social-nested-section",
+              type: "section",
+              content: "Social Media Links",
+              metadata: %{"class" => "mt-4"},
+              items: [
+                %Instance.Element{
+                  id: "social-group",
+                  type: "group",
+                  metadata: %{"layout" => "grid-2"},
+                  items: [
+                    %Instance.Field{
+                      id: "twitter",
+                      name: "twitter",
+                      type: "string",
+                      label: "Twitter",
+                      placeholder: "@username"
+                    },
+                    %Instance.Field{
+                      id: "linkedin",
+                      name: "linkedin",
+                      type: "string",
+                      label: "LinkedIn",
+                      placeholder: "linkedin.com/in/username"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      backend: %Instance.Backend{
+        module: Example.TestBackend,
+        function: :submit,
+        config: [],
+        name: "Test Backend",
+        description: "Logs form submissions for testing"
+      },
+      metadata: %{
+        created_at: DateTime.utc_now()
+      }
+    }
+  end
+
+  @doc """
   Returns a comprehensive showcase form demonstrating all DynamicForm features.
 
   This form demonstrates:
-  - All element types (heading, paragraph, divider, group)
+  - All element types (heading, paragraph, divider, group, section)
   - All field types (string, email, textarea, decimal, boolean, select)
   - Groups with different layouts (grid-2, grid-3, horizontal)
   - Conditional visibility (equals and valid operators)
