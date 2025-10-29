@@ -340,7 +340,8 @@ defmodule DynamicForm.ChangesetConditionalRequiredTest do
             name: "notes",
             type: "textarea",
             label: "Notes",
-            required: false,  # Optional
+            # Optional
+            required: false,
             visible_when: %{field: "has_notes", operator: "equals", value: true}
           }
         ]

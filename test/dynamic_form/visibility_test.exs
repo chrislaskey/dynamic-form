@@ -80,7 +80,11 @@ defmodule DynamicForm.VisibilityTest do
         type: "string",
         label: "Card Number",
         required: true,
-        visible_when: %{"field" => "payment_method", "operator" => "equals", "value" => "credit_card"}
+        visible_when: %{
+          "field" => "payment_method",
+          "operator" => "equals",
+          "value" => "credit_card"
+        }
       }
 
       {:ok, field: field}

@@ -45,7 +45,8 @@ defmodule DynamicForm.Visibility do
   def field_visible?(%Instance.Field{visible_when: nil}, _params), do: true
   def field_visible?(%Instance.Field{visible_when: []}, _params), do: true
 
-  def field_visible?(%Instance.Field{visible_when: conditions}, params) when is_list(conditions) do
+  def field_visible?(%Instance.Field{visible_when: conditions}, params)
+      when is_list(conditions) do
     Enum.all?(conditions, &evaluate_condition(&1, params))
   end
 
