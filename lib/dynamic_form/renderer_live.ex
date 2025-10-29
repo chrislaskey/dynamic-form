@@ -211,11 +211,13 @@ defmodule DynamicForm.RendererLive do
   def render(assigns) do
     hide_submit = Map.get(assigns, :hide_submit, false)
     submit_text = Map.get(assigns, :submit_text, "Submit")
+    uploads = assigns[:uploads] || %{}
 
     assigns =
       assigns
       |> assign(:hide_submit, hide_submit)
       |> assign(:submit_text, submit_text)
+      |> assign(:uploads, uploads)
 
     ~H"""
     <div>
