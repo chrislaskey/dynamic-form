@@ -35,12 +35,8 @@ defmodule DynamicForm.RendererLive do
         send_messages={true}
       />
 
-      def handle_info({:dynamic_form_success, _id, result}, socket) do
+      def handle_info({:dynamic_form_after_success, _id, result}, socket) do
         {:noreply, put_flash(socket, :info, result.message)}
-      end
-
-      def handle_info({:dynamic_form_error, _id, error}, socket) do
-        {:noreply, put_flash(socket, :error, error.message)}
       end
 
   ### No Messages (Self-Contained)
@@ -132,11 +128,7 @@ defmodule DynamicForm.RendererLive do
 
     * `{:dynamic_form_success, component_id, result}` - Sent when form submission succeeds
       - `component_id` - The component's ID
-      - `result` - Map containing `:message`, `:changeset`, and `:data` from the backend
-
-    * `{:dynamic_form_error, component_id, error}` - Sent when form submission fails
-      - `component_id` - The component's ID
-      - `error` - Map containing `:message` and any other error details from the backend
+      - `result` - Map containing `:message` and `:data` from the backend
   """
 
   use Phoenix.LiveComponent
@@ -304,9 +296,15 @@ defmodule DynamicForm.RendererLive do
              |> assign(:form, form)
              |> assign(:submitting, false)}
 
-          {:error, error} ->
-            socket = handle_error(socket, error)
-            {:noreply, assign(socket, :submitting, false)}
+          {:error, _error} ->
+            changeset = Map.put(changeset, :action, :validate)
+            form = to_form(changeset, as: socket.assigns.form_name)
+
+            {:noreply,
+             socket
+             |> assign(:changeset, changeset)
+             |> assign(:form, form)
+             |> assign(:submitting, false)}
         end
       else
         # No backend configured - just send success message with the validated data
@@ -371,15 +369,6 @@ defmodule DynamicForm.RendererLive do
     # Send message to parent LiveView if requested
     if socket.assigns[:send_messages] do
       send(self(), {:dynamic_form_success, socket.assigns.id, result})
-    end
-
-    socket
-  end
-
-  defp handle_error(socket, error) do
-    # Send message to parent LiveView if requested
-    if socket.assigns[:send_messages] do
-      send(self(), {:dynamic_form_error, socket.assigns.id, error})
     end
 
     socket
