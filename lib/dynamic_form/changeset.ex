@@ -41,7 +41,7 @@ defmodule DynamicForm.Changeset do
   def create_changeset(%Instance{} = instance, params \\ %{}) do
     fields = get_fields(instance.items)
     types = build_types_map(fields)
-    required_fields = get_required_fields(fields)
+    required_fields = get_required_fields(fields, params)
 
     # Decode JSON-encoded direct_upload fields
     decoded_params = decode_upload_params(params, fields)
@@ -146,9 +146,11 @@ defmodule DynamicForm.Changeset do
     end)
   end
 
-  defp get_required_fields(fields) do
+  defp get_required_fields(fields, params) do
     fields
-    |> Enum.filter(& &1.required)
+    |> Enum.filter(fn field ->
+      field.required && DynamicForm.Visibility.field_visible?(field, params)
+    end)
     |> Enum.map(&String.to_atom(&1.name))
   end
 
