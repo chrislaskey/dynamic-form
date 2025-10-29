@@ -633,6 +633,40 @@ defmodule Example.FormInstances do
               ]
             }
           ]
+        },
+        %Instance.Element{
+          id: "documents-section",
+          type: "section",
+          content: "Profile Documents",
+          metadata: %{"class" => "mt-6"},
+          items: [
+            %Instance.Element{
+              id: "documents-intro",
+              type: "paragraph",
+              content:
+                "Upload any supporting documents for your profile (resume, certifications, etc.)",
+              metadata: %{"class" => "text-gray-600 text-sm mb-4"}
+            },
+            %Instance.Field{
+              id: "profile_documents",
+              name: "profile_documents",
+              type: "direct_upload",
+              label: "Documents",
+              help_text: "Upload up to 3 files (PDF, DOC, DOCX, or images - max 10MB each)",
+              required: false,
+              metadata: %{
+                "max_entries" => 3,
+                "max_file_size" => 10_000_000,
+                "accept" => [".pdf", ".doc", ".docx", "image/*"],
+                "presigner" => %{
+                  "module" => "Example.MockUrlPresigner",
+                  "function" => "sign"
+                },
+                "bucket" => "user-profiles",
+                "object_name_prefix" => "profile-documents/"
+              }
+            }
+          ]
         }
       ],
       backend: %Instance.Backend{

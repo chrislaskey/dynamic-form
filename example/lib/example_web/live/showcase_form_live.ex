@@ -24,8 +24,6 @@ defmodule ExampleWeb.ShowcaseFormLive do
   end
 
   # Decode instance at the edge of the system
-  defp decode_instance(%Instance{} = instance), do: instance
-
   defp decode_instance(data) when is_binary(data) or is_map(data) do
     Instance.decode!(data)
   end

@@ -139,6 +139,7 @@ defmodule DynamicForm.RendererLive do
   """
 
   use Phoenix.LiveComponent
+  import Phoenix.LiveView, only: [allow_upload: 3, cancel_upload: 3]
   alias DynamicForm.{Renderer, Changeset, Instance}
 
   @impl true
@@ -148,6 +149,20 @@ defmodule DynamicForm.RendererLive do
 
   @impl true
   def update(assigns, socket) do
+    # Handle special update actions from child components
+    cond do
+      Map.has_key?(assigns, :action) && assigns.action == :delete_file ->
+        handle_delete_file_update(assigns, socket)
+
+      Map.has_key?(assigns, :action) && assigns.action == :cancel_upload ->
+        handle_cancel_upload_update(assigns, socket)
+
+      true ->
+        handle_normal_update(assigns, socket)
+    end
+  end
+
+  defp handle_normal_update(assigns, socket) do
     # Decode instance if needed
     instance = decode_instance(assigns.instance)
 
@@ -157,16 +172,39 @@ defmodule DynamicForm.RendererLive do
     changeset = Changeset.create_changeset(instance, initial_params)
     form = to_form(changeset, as: form_name)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:instance, instance)
-     |> assign(:changeset, changeset)
-     |> assign(:form, form)
-     |> assign(:form_name, form_name)
-     |> assign(:initial_params, initial_params)
-     |> assign(:gettext, gettext)
-     |> assign(:submitting, false)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:instance, instance)
+      |> assign(:changeset, changeset)
+      |> assign(:form, form)
+      |> assign(:form_name, form_name)
+      |> assign(:initial_params, initial_params)
+      |> assign(:gettext, gettext)
+      |> assign(:submitting, false)
+      |> allow_uploads_for_direct_upload_fields(instance)
+
+    {:ok, socket}
+  end
+
+  defp handle_delete_file_update(assigns, socket) do
+    field_atom = String.to_atom(assigns.field_name)
+
+    current_params =
+      socket.assigns.changeset
+      |> Ecto.Changeset.apply_changes()
+      |> Map.from_struct()
+      |> Map.put(field_atom, assigns.remaining_files)
+
+    changeset = DynamicForm.Changeset.create_changeset(socket.assigns.instance, current_params)
+    form = to_form(changeset, as: socket.assigns.form_name)
+
+    {:ok, assign(socket, changeset: changeset, form: form)}
+  end
+
+  defp handle_cancel_upload_update(assigns, socket) do
+    socket = cancel_upload(socket, assigns.upload_name, assigns.ref)
+    {:ok, socket}
   end
 
   @impl true
@@ -192,6 +230,8 @@ defmodule DynamicForm.RendererLive do
         disabled={@submitting}
         hide_submit={@hide_submit}
         gettext={@gettext}
+        uploads={@uploads}
+        parent_id={@id}
       />
     </div>
     """
@@ -403,5 +443,124 @@ defmodule DynamicForm.RendererLive do
 
   defp decode_instance(data) when is_binary(data) or is_map(data) do
     Instance.decode!(data)
+  end
+
+  # Helper to set up uploads for direct_upload fields
+  defp allow_uploads_for_direct_upload_fields(socket, instance) do
+    direct_upload_fields = find_direct_upload_fields(instance.items)
+
+    Enum.reduce(direct_upload_fields, socket, fn field, acc_socket ->
+      metadata = field.metadata || %{}
+      max_entries = get_in(metadata, ["max_entries"]) || 3
+      max_file_size = get_in(metadata, ["max_file_size"]) || 10_000_000
+      accept = get_in(metadata, ["accept"]) || :any
+
+      upload_name = String.to_atom("upload_#{field.name}")
+
+      allow_upload(acc_socket, upload_name,
+        accept: accept,
+        max_entries: max_entries,
+        max_file_size: max_file_size,
+        auto_upload: true,
+        external: fn entry, socket ->
+          presign_upload_entry(entry, socket, field, metadata)
+        end,
+        progress: fn _upload_name, entry, socket ->
+          handle_upload_progress(entry, socket, field)
+        end
+      )
+    end)
+  end
+
+  defp find_direct_upload_fields(items) do
+    Enum.flat_map(items, fn item ->
+      case item do
+        %Instance.Field{type: "direct_upload"} ->
+          [item]
+
+        %Instance.Element{items: nested_items} when is_list(nested_items) ->
+          find_direct_upload_fields(nested_items)
+
+        _ ->
+          []
+      end
+    end)
+  end
+
+  defp presign_upload_entry(entry, socket, field, metadata) do
+    presigner_config = get_in(metadata, ["presigner"]) || %{}
+    presigner_module = get_in(presigner_config, ["module"])
+    presigner_function = get_in(presigner_config, ["function"]) || "sign"
+
+    # Build context for presigner
+    context = %{
+      bucket: get_in(metadata, ["bucket"]),
+      prefix: get_in(metadata, ["object_name_prefix"]) || "",
+      field_name: field.name
+    }
+
+    # Generate presigned URL
+    url =
+      if presigner_module do
+        module = String.to_existing_atom("Elixir.#{presigner_module}")
+        function = String.to_existing_atom(presigner_function)
+        apply(module, function, [entry.client_name, context])
+      else
+        require Logger
+
+        Logger.warning(
+          "No presigner configured for direct_upload field '#{field.name}'. Upload will fail."
+        )
+
+        ""
+      end
+
+    {:ok, %{uploader: "GoogleStorage", url: url}, socket}
+  end
+
+  defp handle_upload_progress(entry, socket, field) do
+    if entry.done? do
+      # Get current uploaded files for this field
+      field_atom = String.to_atom(field.name)
+      current_files = Phoenix.HTML.Form.input_value(socket.assigns.form, field_atom) || []
+
+      # Add new file metadata
+      metadata = field.metadata || %{}
+      bucket = get_in(metadata, ["bucket"])
+      prefix = get_in(metadata, ["object_name_prefix"]) || ""
+      object_name = "#{prefix}#{entry.client_name}"
+
+      {:ok, uploaded_on} = DateTime.shift_zone(DateTime.utc_now(), "America/Denver")
+      uploaded_on_display = Calendar.strftime(uploaded_on, "%m/%d/%Y")
+
+      file_data = %{
+        "filename" => entry.client_name,
+        "cloud_bucket" => bucket,
+        "cloud_path" => object_name,
+        "cloud_provider" => "gcp",
+        "uploaded_on" => uploaded_on_display
+      }
+
+      # Remove duplicates and add new file
+      updated_files =
+        Enum.reject(current_files, &(&1["filename"] == entry.client_name)) ++ [file_data]
+
+      # Note: We don't need to explicitly consume the entry for external uploads
+      # The entry is automatically consumed when the external upload completes
+
+      # Update the form with the new file data
+      current_params =
+        socket.assigns.changeset
+        |> Ecto.Changeset.apply_changes()
+        |> Map.from_struct()
+        |> Map.put(field_atom, updated_files)
+
+      changeset = DynamicForm.Changeset.create_changeset(socket.assigns.instance, current_params)
+      form = to_form(changeset, as: socket.assigns.form_name)
+
+      {:noreply, assign(socket, changeset: changeset, form: form)}
+    else
+      {:noreply, socket}
+    end
   end
 end

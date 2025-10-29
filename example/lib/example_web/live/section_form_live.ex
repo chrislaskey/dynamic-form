@@ -45,11 +45,11 @@ defmodule ExampleWeb.SectionFormLive do
             phx-click="toggle_format"
             class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
-            <%= if @use_json, do: "📋 Using JSON String", else: "🏗️ Using Struct" %>
+            {if @use_json, do: "📋 Using JSON String", else: "🏗️ Using Struct"}
           </button>
         </div>
         <div class="mt-3 text-xs text-indigo-800 font-mono bg-indigo-100 p-2 rounded">
-          instance=&lbrace;<%= if @use_json, do: "@json_string", else: "@form_instance" %>&rbrace;
+          instance=&lbrace;{if @use_json, do: "@json_string", else: "@form_instance"}&rbrace;
         </div>
       </div>
 
@@ -105,6 +105,41 @@ defmodule ExampleWeb.SectionFormLive do
         </div>
       </div>
 
+      <div class="mt-8 rounded-lg bg-amber-50 p-6">
+        <h3 class="text-lg font-semibold text-amber-900 mb-4">☁️ Direct Upload Feature</h3>
+        <div class="text-sm text-amber-800 space-y-3">
+          <div>
+            <strong>What is Direct Upload?</strong>
+            <p class="mt-1">
+              The direct_upload field type enables file uploads directly to cloud storage (like Google Cloud Storage or AWS S3)
+              using presigned URLs, bypassing your application server. This improves performance and scalability for file uploads.
+            </p>
+          </div>
+
+          <div>
+            <strong>Features:</strong>
+            <ul class="list-disc list-inside ml-4 mt-1">
+              <li>Upload files directly to cloud storage from the browser</li>
+              <li>Progress tracking for each file</li>
+              <li>Multiple file support with drag & drop</li>
+              <li>File type and size validation</li>
+              <li>Configurable max files and file size limits</li>
+              <li>Uploaded files metadata stored in form data</li>
+            </ul>
+          </div>
+
+          <div>
+            <strong>Try it:</strong>
+            <p class="mt-1">
+              Scroll to the "Profile Documents" section below to see the direct_upload field in action.
+              This example uses a mock presigner (Example.MockUrlPresigner) for demonstration purposes.
+              In a real application, you would implement a presigner that generates actual presigned URLs
+              for your cloud storage provider.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="mt-8 rounded-lg bg-blue-50 p-6">
         <h3 class="text-lg font-semibold text-blue-900 mb-4">📦 Section Features</h3>
         <div class="text-sm text-blue-800 space-y-3">
@@ -149,6 +184,9 @@ defmodule ExampleWeb.SectionFormLive do
               <li>
                 <strong>Additional Information</strong> - Contains bio field and a nested
                 "Social Media Links" section
+              </li>
+              <li>
+                <strong>Profile Documents</strong> - Contains a direct_upload field for file uploads
               </li>
             </ul>
           </div>

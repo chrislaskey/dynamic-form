@@ -76,15 +76,29 @@ defmodule DynamicForm.Renderer do
     doc: "Gettext backend module for translations"
   )
 
+  attr(:uploads, :map,
+    default: %{},
+    doc: "Upload configurations for direct_upload fields"
+  )
+
+  attr(:parent_id, :string,
+    default: nil,
+    doc: "Parent component ID for LiveComponent communication"
+  )
+
   def render(assigns) do
     # Decode instance if needed
     instance = decode_instance(assigns.instance)
     submit_text = assigns.submit_text || "Submit"
+    uploads = Map.get(assigns, :uploads, %{})
+    parent_id = Map.get(assigns, :parent_id)
 
     assigns =
       assigns
       |> assign(:instance, instance)
       |> assign(:submit_text, submit_text)
+      |> assign(:uploads, uploads)
+      |> assign(:parent_id, parent_id)
 
     ~H"""
     <.form
@@ -96,7 +110,7 @@ defmodule DynamicForm.Renderer do
       phx-target={@target}
     >
       <%= for item <- visible_items(@instance.items, @form) do %>
-        <%= render_item(item, f, disabled: @disabled, gettext: @gettext) %>
+        <%= render_item(item, f, disabled: @disabled, gettext: @gettext, uploads: @uploads, parent_id: @parent_id) %>
       <% end %>
 
       <div :if={!@hide_submit} class="mt-6 flex items-center justify-end gap-x-6">
@@ -677,11 +691,15 @@ defmodule DynamicForm.Renderer do
   defp render_field(%Instance.Field{type: "direct_upload"} = field, form, opts) do
     form_disabled = Keyword.get(opts, :disabled, false)
     disabled = form_disabled || field.disabled || false
+    uploads = Keyword.get(opts, :uploads, %{})
+    parent_id = Keyword.get(opts, :parent_id)
 
     assigns = %{
       field: field,
       form: form,
-      disabled: disabled
+      disabled: disabled,
+      uploads: uploads,
+      parent_id: parent_id
     }
 
     ~H"""
@@ -691,6 +709,8 @@ defmodule DynamicForm.Renderer do
       field={@field}
       form={@form}
       disabled={@disabled}
+      uploads={@uploads}
+      parent_id={@parent_id}
     />
     """
   end
