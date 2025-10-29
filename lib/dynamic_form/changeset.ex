@@ -43,8 +43,11 @@ defmodule DynamicForm.Changeset do
     types = build_types_map(fields)
     required_fields = get_required_fields(fields)
 
+    # Decode JSON-encoded direct_upload fields
+    decoded_params = decode_upload_params(params, fields)
+
     {%{}, types}
-    |> Ecto.Changeset.cast(params, Map.keys(types), empty_values: [])
+    |> Ecto.Changeset.cast(decoded_params, Map.keys(types), empty_values: [])
     |> Ecto.Changeset.validate_required(required_fields)
     |> apply_custom_validations(fields)
   end
@@ -117,8 +120,31 @@ defmodule DynamicForm.Changeset do
   defp map_field_type("select"), do: :string
   defp map_field_type("radio"), do: :string
   defp map_field_type("radio-group"), do: :string
+  defp map_field_type("direct_upload"), do: {:array, :map}
   defp map_field_type(type) when is_binary(type), do: String.to_atom(type)
   defp map_field_type(type) when is_atom(type), do: type
+
+  defp decode_upload_params(params, fields) do
+    upload_fields =
+      fields
+      |> Enum.filter(&(&1.type == "direct_upload"))
+      |> Enum.map(& &1.name)
+
+    Enum.reduce(upload_fields, params, fn field_name, acc ->
+      case Map.get(acc, field_name) do
+        value when is_binary(value) ->
+          # Decode JSON string to list of maps
+          case Jason.decode(value) do
+            {:ok, decoded} -> Map.put(acc, field_name, decoded)
+            {:error, _} -> acc
+          end
+
+        # Already decoded or nil
+        _ ->
+          acc
+      end
+    end)
+  end
 
   defp get_required_fields(fields) do
     fields

@@ -673,6 +673,28 @@ defmodule DynamicForm.Renderer do
     """
   end
 
+  # Render a direct_upload field (file upload to cloud storage)
+  defp render_field(%Instance.Field{type: "direct_upload"} = field, form, opts) do
+    form_disabled = Keyword.get(opts, :disabled, false)
+    disabled = form_disabled || field.disabled || false
+
+    assigns = %{
+      field: field,
+      form: form,
+      disabled: disabled
+    }
+
+    ~H"""
+    <.live_component
+      module={DynamicForm.DirectUpload}
+      id={"#{@field.id}-upload-component"}
+      field={@field}
+      form={@form}
+      disabled={@disabled}
+    />
+    """
+  end
+
   # Fallback for unknown field types
   defp render_field(field, _form, _opts) do
     assigns = %{field: field}

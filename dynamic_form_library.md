@@ -60,7 +60,8 @@ defmodule MyApp.CustomFormBehaviour do
       %{type: :decimal, label: "Number", icon: "calculator"},
       %{type: :boolean, label: "Checkbox", icon: "check-square"},
       %{type: :select, label: "Dropdown", icon: "chevron-down"},
-      %{type: :textarea, label: "Text Area", icon: "document-text"}
+      %{type: :textarea, label: "Text Area", icon: "document-text"},
+      %{type: :direct_upload, label: "File Upload", icon: "cloud-upload"}
     ]
   end
 
@@ -480,7 +481,7 @@ defmodule DynamicForm.Renderer do
     disabled = Keyword.get(opts, :disabled, false)
     assigns = %{field: field, form: form, disabled: disabled}
     ~H"""
-    <.input 
+    <.input
       field={@form[String.to_atom(@field.name)]}
       type="select"
       label={@field.label}
@@ -491,7 +492,22 @@ defmodule DynamicForm.Renderer do
     />
     """
   end
-  
+
+  # Render direct_upload field (file upload to cloud storage)
+  defp render_field(%{type: :direct_upload} = field, form, opts \\ []) do
+    disabled = Keyword.get(opts, :disabled, false)
+    assigns = %{field: field, form: form, disabled: disabled}
+    ~H"""
+    <.live_component
+      module={DynamicForm.DirectUpload}
+      id={"#{@field.id}-upload-component"}
+      field={@field}
+      form={@form}
+      disabled={@disabled}
+    />
+    """
+  end
+
   # Fallback for unknown field types
   defp render_field(field, _form) do
     assigns = %{field: field}
@@ -1173,11 +1189,121 @@ end
 - Form response submission
 - Multi-step form building
 
+## Direct Upload Field Type
+
+The `direct_upload` field type enables file uploads directly to cloud storage using presigned URLs, bypassing the application server for improved performance and scalability.
+
+### Configuration
+
+Direct upload fields require configuration via the `metadata` map:
+
+```elixir
+%DynamicForm.Instance.Field{
+  id: "documents",
+  name: "documents",
+  type: "direct_upload",
+  label: "Upload Documents",
+  help_text: "Upload supporting documents (max 10MB per file)",
+  required: true,
+  metadata: %{
+    "max_entries" => 3,
+    "max_file_size" => 10_000_000,
+    "accept" => [".pdf", ".doc", ".docx", "image/*"],
+    "presigner" => %{
+      "module" => "MyApp.UrlPresigner",
+      "function" => "sign"
+    },
+    "bucket" => "my-uploads-bucket",
+    "object_name_prefix" => "applications/documents/"
+  }
+}
+```
+
+### Metadata Options
+
+- `max_entries` (integer): Maximum number of files that can be uploaded (default: 3)
+- `max_file_size` (integer): Maximum file size in bytes (default: 10,000,000 = 10MB)
+- `accept` (list or `:any`): Allowed file types (MIME types or extensions)
+- `presigner` (map): Configuration for the presigner callback
+  - `module` (string): Fully-qualified module name that implements the presigner
+  - `function` (string): Function name to call for generating presigned URLs
+- `bucket` (string): Cloud storage bucket name
+- `object_name_prefix` (string): Prefix for object names in storage
+
+### Presigner Implementation
+
+The presigner module must implement a function with the signature:
+
+```elixir
+@spec sign(filename :: String.t(), context :: map()) :: String.t()
+```
+
+Example implementation:
+
+```elixir
+defmodule MyApp.UrlPresigner do
+  def sign(filename, context) do
+    bucket = context.bucket
+    prefix = context.prefix || ""
+    object_name = "#{prefix}#{filename}"
+
+    # Use existing CoreData.Clients.UrlPresigner
+    CoreData.Clients.UrlPresigner.sign(bucket, object_name)
+  end
+end
+```
+
+### Uploaded Files Data Structure
+
+Uploaded files are stored in the changeset as a list of maps:
+
+```elixir
+[
+  %{
+    "filename" => "document.pdf",
+    "cloud_bucket" => "my-uploads-bucket",
+    "cloud_path" => "applications/documents/document.pdf",
+    "cloud_provider" => "gcp",
+    "uploaded_on" => "10/28/2025"
+  }
+]
+```
+
+### LiveView Integration
+
+The DirectUpload component sends messages to the parent LiveView:
+
+- `:uploads_not_ready` - When upload starts or all files are deleted
+- `:uploads_ready` - When all uploads complete
+
+Handle these messages in your LiveView:
+
+```elixir
+def handle_info(:uploads_not_ready, socket) do
+  # Optionally disable submit or show loading state
+  {:noreply, socket}
+end
+
+def handle_info(:uploads_ready, socket) do
+  # Re-enable submit button
+  {:noreply, socket}
+end
+```
+
+### Complete Example
+
+See `example/direct_upload_example.ex` for a comprehensive example including:
+- Form configuration with direct_upload fields
+- Presigner implementation
+- Backend processing of uploaded files
+- LiveView integration
+- Migration from DirectorWeb upload pattern
+
 ## Future Enhancements
 
-- **Conditional Logic**: Show/hide fields based on other field values
+- **Conditional Logic**: Show/hide fields based on other field values ✅ (Implemented)
 - **Multi-page Forms**: Support for wizard-style forms
-- **File Uploads**: Dynamic file upload fields
+- **File Uploads**: Dynamic file upload fields ✅ (Implemented as `direct_upload`)
 - **Rich Text**: WYSIWYG text editor fields
 - **Form Analytics**: Track form performance and completion rates
 - **A/B Testing**: Support for form variations
