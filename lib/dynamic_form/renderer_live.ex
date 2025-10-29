@@ -278,7 +278,7 @@ defmodule DynamicForm.RendererLive do
       if instance.backend do
         backend_module = instance.backend.module
         backend_function = instance.backend.function
-        backend_config = instance.backend.config
+        backend_config = Map.get(instance.backend, :config, [])
         meta = [config: backend_config, changeset: changeset]
 
         case apply(backend_module, backend_function, [data, meta]) do
@@ -309,7 +309,7 @@ defmodule DynamicForm.RendererLive do
       else
         # No backend configured - just send success message with the validated data
         result = %{
-          message: "Form submitted successfully",
+          config: [],
           data: data
         }
 
