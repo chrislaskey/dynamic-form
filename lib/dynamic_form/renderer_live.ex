@@ -20,6 +20,7 @@ defmodule DynamicForm.RendererLive do
     * `:send_messages` - Whether to send messages to parent LiveView (boolean, default: `false`)
     * `:hide_submit` - Whether to hide the submit button (boolean, default: `false`)
     * `:gettext` - Gettext backend module for translations (atom, default: `DynamicForm.Gettext`)
+    * `:validation_summary` - Display validation errors at top of form (string, `nil`, `"simple"`, or `"detailed"`, default: `nil`)
 
   ## Usage
 
@@ -211,16 +212,25 @@ defmodule DynamicForm.RendererLive do
   def render(assigns) do
     hide_submit = Map.get(assigns, :hide_submit, false)
     submit_text = Map.get(assigns, :submit_text, "Submit")
+    validation_summary = Map.get(assigns, :validation_summary, nil)
     uploads = assigns[:uploads] || %{}
 
     assigns =
       assigns
       |> assign(:hide_submit, hide_submit)
       |> assign(:submit_text, submit_text)
+      |> assign(:validation_summary, validation_summary)
       |> assign(:uploads, uploads)
 
     ~H"""
     <div>
+      <%= if @validation_summary && @changeset.action do %>
+        <.validation_summary_component
+          changeset={@changeset}
+          mode={@validation_summary}
+          instance={@instance}
+        />
+      <% end %>
       <Renderer.render
         instance={@instance}
         form={@form}
@@ -377,6 +387,64 @@ defmodule DynamicForm.RendererLive do
 
   # Public API
 
+  # Renders a validation summary component showing form errors.
+  #
+  # This component displays validation errors at the top of the form when the changeset
+  # has errors and an action has been set (indicating validation has been triggered).
+  #
+  # Modes:
+  #   * "simple" - Shows a generic message about filling out required fields
+  #   * "detailed" - Shows the generic message plus a list of specific field errors
+  defp validation_summary_component(assigns) do
+    errors = get_changeset_errors(assigns.changeset)
+    has_errors = length(errors) > 0
+
+    assigns =
+      assigns
+      |> assign(:has_errors, has_errors)
+      |> assign(:errors, errors)
+
+    ~H"""
+    <%= if @has_errors do %>
+      <div class="rounded-md bg-red-50 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-5 w-5 text-red-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">
+              You must fill out all required fields before marking the section as complete.
+            </h3>
+            <%= if @mode == "detailed" do %>
+              <div class="mt-2 text-sm text-red-700">
+                <ul role="list" class="list-disc space-y-1 pl-5">
+                  <%= for {field, message} <- @errors do %>
+                    <li>
+                      <span class="font-medium"><%= humanize_field_name(field, @instance) %>:</span>
+                      <%= message %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    """
+  end
+
   @doc """
   Renders a submit button that can be placed outside a form element.
 
@@ -456,6 +524,59 @@ defmodule DynamicForm.RendererLive do
 
   defp decode_instance(data) when is_binary(data) or is_map(data) do
     Instance.decode!(data)
+  end
+
+  # Helper to extract errors from changeset
+  defp get_changeset_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+    |> Enum.flat_map(fn {field, messages} ->
+      messages
+      |> List.wrap()
+      |> Enum.map(fn message -> {field, message} end)
+    end)
+  end
+
+  # Helper to humanize field names by looking up the label in the instance
+  defp humanize_field_name(field_atom, instance) do
+    field_name = to_string(field_atom)
+
+    # Search through instance items to find the field and get its label
+    case find_field_by_name(instance.items, field_name) do
+      %{label: label} when is_binary(label) and label != "" -> label
+      _ -> humanize_atom(field_atom)
+    end
+  end
+
+  # Helper to find a field by name in the instance items
+  defp find_field_by_name(items, name) when is_list(items) do
+    Enum.find_value(items, fn item ->
+      case item do
+        %Instance.Field{name: ^name} = field ->
+          field
+
+        %Instance.Element{items: nested_items} when is_list(nested_items) ->
+          find_field_by_name(nested_items, name)
+
+        _ ->
+          nil
+      end
+    end)
+  end
+
+  defp find_field_by_name(_, _), do: nil
+
+  # Helper to humanize an atom (fallback when label not found)
+  defp humanize_atom(atom) do
+    atom
+    |> to_string()
+    |> String.replace("_", " ")
+    |> String.split()
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
   end
 
   # Helper to set up uploads for direct_upload fields

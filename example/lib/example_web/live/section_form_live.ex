@@ -68,6 +68,7 @@ defmodule ExampleWeb.SectionFormLive do
           hide_submit={true}
           send_messages={true}
           submit_text="Save Profile"
+          validation_summary="detailed"
         />
       </div>
 
