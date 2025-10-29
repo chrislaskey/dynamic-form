@@ -22,7 +22,7 @@ defmodule DynamicForm.Instance.Decoder do
   def decode_instance(data) when is_map(data) do
     %Instance{
       id: Map.fetch!(data, "id"),
-      name: Map.fetch!(data, "name"),
+      name: Map.get(data, "name"),
       description: Map.get(data, "description"),
       items: decode_items(Map.get(data, "items", [])),
       backend: decode_backend(Map.get(data, "backend")),

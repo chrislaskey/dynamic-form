@@ -46,7 +46,7 @@ defmodule DynamicForm.Instance do
       instance = DynamicForm.Instance.decode!(map)
   """
 
-  @enforce_keys [:id, :name, :items]
+  @enforce_keys [:id, :items]
   defstruct [
     :id,
     :name,
@@ -60,7 +60,7 @@ defmodule DynamicForm.Instance do
 
   @type t :: %__MODULE__{
           id: String.t(),
-          name: String.t(),
+          name: String.t() | nil,
           description: String.t() | nil,
           items: [Field.t() | Element.t()],
           backend: Backend.t(),

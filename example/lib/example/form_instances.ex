@@ -430,7 +430,6 @@ defmodule Example.FormInstances do
   def section_form do
     %Instance{
       id: "section-form",
-      name: "User Profile Form",
       description: "Complete your profile information using sections.",
       items: [
         %Instance.Element{
