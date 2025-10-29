@@ -302,8 +302,7 @@ defmodule DynamicForm.RendererLive do
         # No backend configured - just send success message with the validated data
         result = %{
           message: "Form submitted successfully",
-          data: data,
-          changeset: changeset
+          data: data
         }
 
         socket = handle_success(socket, result)
