@@ -269,33 +269,45 @@ defmodule DynamicForm.RendererLive do
 
     if changeset.valid? do
       data = Ecto.Changeset.apply_changes(changeset)
-
-      # Submit via backend
       instance = socket.assigns.instance
-      backend_module = instance.backend.module
-      backend_function = instance.backend.function
-      backend_config = instance.backend.config
-
       socket = assign(socket, :submitting, true)
-      meta = [config: backend_config, changeset: changeset]
 
-      case apply(backend_module, backend_function, [data, meta]) do
-        {:ok, result} ->
-          socket = handle_success(socket, result)
-          {:noreply, assign(socket, :submitting, false)}
+      # Submit via backend if configured, otherwise just send success message
+      if instance.backend do
+        backend_module = instance.backend.module
+        backend_function = instance.backend.function
+        backend_config = instance.backend.config
+        meta = [config: backend_config, changeset: changeset]
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          changeset = Map.put(changeset, :action, :validate)
-          form = to_form(changeset, as: socket.assigns.form_name)
+        case apply(backend_module, backend_function, [data, meta]) do
+          {:ok, result} ->
+            socket = handle_success(socket, result)
+            {:noreply, assign(socket, :submitting, false)}
 
-          {:noreply,
-           socket
-           |> assign(:changeset, changeset)
-           |> assign(:form, form)}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            changeset = Map.put(changeset, :action, :validate)
+            form = to_form(changeset, as: socket.assigns.form_name)
 
-        {:error, error} ->
-          socket = handle_error(socket, error)
-          {:noreply, assign(socket, :submitting, false)}
+            {:noreply,
+             socket
+             |> assign(:changeset, changeset)
+             |> assign(:form, form)
+             |> assign(:submitting, false)}
+
+          {:error, error} ->
+            socket = handle_error(socket, error)
+            {:noreply, assign(socket, :submitting, false)}
+        end
+      else
+        # No backend configured - just send success message with the validated data
+        result = %{
+          message: "Form submitted successfully",
+          data: data,
+          changeset: changeset
+        }
+
+        socket = handle_success(socket, result)
+        {:noreply, assign(socket, :submitting, false)}
       end
     else
       changeset = Map.put(changeset, :action, :validate)

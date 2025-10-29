@@ -63,7 +63,7 @@ defmodule DynamicForm.Instance do
           name: String.t() | nil,
           description: String.t() | nil,
           items: [Field.t() | Element.t()],
-          backend: Backend.t(),
+          backend: Backend.t() | nil,
           metadata: map(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
