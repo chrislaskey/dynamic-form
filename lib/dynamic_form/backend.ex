@@ -59,23 +59,36 @@ defmodule DynamicForm.Backend do
   This callback documents the expected signature for backend submission functions.
   The actual function name is configurable via the Instance.Backend struct.
 
-  Receives the form data (as a map) and backend-specific configuration as a keyword list.
-  Returns `{:ok, result}` on success or `{:error, reason}` on failure.
-
-  The result map should include:
-  - `:message` - A success/error message
-  - `:data` - The submitted form data (optional but recommended)
+  **Important**: This function is called on every form submission, regardless of
+  validation state. Check `changeset.valid?` to determine if built-in validations passed.
 
   ## Parameters
-    * `form_data` - Map of the submitted form data
-    * `config` - Keyword list of backend-specific configuration (passed as `config: backend_config`)
+    * `form_data` - Map of the submitted form data (result of `Ecto.Changeset.apply_changes/1`)
+    * `changeset` - The Ecto.Changeset, which may be valid or invalid
+    * `config` - Keyword list of backend-specific configuration
 
   ## Returns
-    * `{:ok, result}` - Where result is a map with at least `:message` and optionally `:data`
-    * `{:error, error}` - Where error is a map with at least `:message`
+    * `{:cont, result}` - Continue with success, where result is a map (typically with `:message` and `:data`)
+    * `{:halt, %Ecto.Changeset{}}` - Halt with validation errors to display on the form
+    * `{:halt, error}` - Halt with a general error
+
+  ## Examples
+
+      def submit(data, changeset, config) do
+        # Check if built-in validations passed
+        if not changeset.valid? do
+          {:halt, changeset}
+        else
+          # Custom validation or processing
+          case process_submission(data, config) do
+            {:ok, result} -> {:cont, %{message: "Success!", data: result}}
+            {:error, reason} -> {:halt, %{message: "Failed: \#{reason}"}}
+          end
+        end
+      end
   """
-  @callback submit(form_data :: map(), config :: Keyword.t()) ::
-              {:ok, map()} | {:error, map()}
+  @callback submit(form_data :: map(), changeset :: Ecto.Changeset.t(), config :: Keyword.t()) ::
+              {:cont, map()} | {:halt, Ecto.Changeset.t()} | {:halt, map()}
 
   @doc """
   Validates the backend configuration.

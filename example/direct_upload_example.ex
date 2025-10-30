@@ -99,7 +99,7 @@ defmodule DynamicForm.Example.DirectUploadExample do
         @behaviour DynamicForm.Backend
 
         @impl true
-        def submit(data, meta) do
+        def submit(data, changeset, config) do
           # data is a map with field values including the uploaded files
           # %{
           #   applicant_name: "John Doe",
@@ -114,17 +114,27 @@ defmodule DynamicForm.Example.DirectUploadExample do
           #   ]
           # }
 
-          # Process the submission
-          case save_application(data) do
-            {:ok, application} ->
-              {:ok, %{message: "Application submitted successfully", application: application}}
+          # Check if built-in validations passed
+          if not changeset.valid? do
+            {:halt, changeset}
+          else
+            # Process the submission
+            case save_application(data, config) do
+              {:ok, application} ->
+                {:cont, %{message: "Application submitted successfully", application: application}}
 
-            {:error, reason} ->
-              {:error, %{message: "Failed to submit application", reason: reason}}
+              {:error, reason} ->
+                {:halt, %{message: "Failed to submit application", reason: reason}}
+            end
           end
         end
 
-        defp save_application(data) do
+        @impl true
+        def validate_config(_config) do
+          :ok
+        end
+
+        defp save_application(data, _config) do
           # Your business logic here
           # Save to database, send notifications, etc.
           {:ok, data}

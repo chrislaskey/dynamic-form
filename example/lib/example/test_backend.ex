@@ -9,10 +9,15 @@ defmodule Example.TestBackend do
   require Logger
 
   @impl DynamicForm.Backend
-  def submit(data, _options) do
-    Logger.info("Form submitted successfully: #{inspect(data)}")
-
-    {:ok, %{message: "Form submitted successfully!", data: data}}
+  def submit(data, changeset, _config) do
+    # Check if built-in validations passed
+    if not changeset.valid? do
+      Logger.warning("Form submission with invalid changeset: #{inspect(changeset.errors)}")
+      {:halt, changeset}
+    else
+      Logger.info("Form submitted successfully: #{inspect(data)}")
+      {:cont, %{message: "Form submitted successfully!", data: data}}
+    end
   end
 
   @impl DynamicForm.Backend

@@ -94,31 +94,40 @@ defmodule DynamicForm.RendererLive do
 
   ## Backend Function
 
-  The backend function specified in the form instance is called with the following signature:
+  The backend function specified in the form instance is called on every form submission with the following signature:
 
-      backend_function(data, opts)
+      backend_function(data, changeset, config)
 
   Where:
-    * `data` - The validated form data (Ecto.Changeset.apply_changes/1 result)
-    * `opts` - Keyword list containing:
-      - `:config` - The backend configuration from the form instance
-      - `:changeset` - The validated changeset
+    * `data` - The form data (Ecto.Changeset.apply_changes/1 result)
+    * `changeset` - The Ecto.Changeset (may be valid or invalid)
+    * `config` - Keyword list of backend configuration from the form instance
 
-  The backend function can return:
-    * `{:ok, result}` - Success, where result is passed to success handlers
-    * `{:error, %Ecto.Changeset{}}` - Validation errors to display on the form
-    * `{:error, error}` - General error, passed to error handlers
+  **Important**: The backend function is called regardless of changeset validity. This gives
+  the application full control over validation and processing. Check `changeset.valid?` to
+  determine if built-in validations passed.
+
+  The backend function must return:
+    * `{:cont, result}` - Continue with success, where result is passed to success handlers
+    * `{:halt, %Ecto.Changeset{}}` - Halt with validation errors to display on the form
+    * `{:halt, error}` - Halt with a general error
 
   Example backend function that adds custom errors:
 
-      def process_form(data, opts) do
-        config = Keyword.get(opts, :config)
-        changeset = Keyword.get(opts, :changeset)
-
-        if email_already_exists?(data.email) do
-          {:error, Ecto.Changeset.add_error(changeset, :email, "already taken")}
+      def process_form(data, changeset, config) do
+        # Check if basic validations passed
+        if not changeset.valid? do
+          {:halt, changeset}
         else
-          save_to_database(data, config)
+          # Custom validation logic
+          if email_already_exists?(data.email) do
+            {:halt, Ecto.Changeset.add_error(changeset, :email, "already taken")}
+          else
+            case save_to_database(data, config) do
+              {:ok, result} -> {:cont, %{message: "Saved!", data: result}}
+              {:error, reason} -> {:halt, %{message: "Failed"}}
+            end
+          end
         end
       end
 
@@ -269,45 +278,43 @@ defmodule DynamicForm.RendererLive do
       |> Changeset.create_changeset(merged_params)
       |> Map.put(:action, :updated)
 
-    if changeset.valid? do
-      data = Ecto.Changeset.apply_changes(changeset)
-      instance = socket.assigns.instance
-      socket = assign(socket, :submitting, true)
+    data = Ecto.Changeset.apply_changes(changeset)
+    instance = socket.assigns.instance
+    socket = assign(socket, :submitting, true)
 
-      # Submit via backend if configured, otherwise just send success message
-      if instance.backend do
-        backend_module = instance.backend.module
-        backend_function = instance.backend.function
-        backend_config = Map.get(instance.backend, :config, [])
-        meta = [config: backend_config, changeset: changeset]
+    # Submit via backend if configured, otherwise just send success message
+    if instance.backend do
+      backend_module = instance.backend.module
+      backend_function = instance.backend.function
+      backend_config = Map.get(instance.backend, :config, [])
 
-        case apply(backend_module, backend_function, [data, meta]) do
-          {:ok, result} ->
-            socket = handle_success(socket, result)
-            {:noreply, assign(socket, :submitting, false)}
+      case apply(backend_module, backend_function, [data, changeset, backend_config]) do
+        {:cont, result} ->
+          socket = handle_success(socket, result)
+          {:noreply, assign(socket, :submitting, false)}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            changeset = Map.put(changeset, :action, :validate)
-            form = to_form(changeset, as: socket.assigns.form_name)
+        {:halt, %Ecto.Changeset{} = changeset} ->
+          changeset = Map.put(changeset, :action, :validate)
+          form = to_form(changeset, as: socket.assigns.form_name)
 
-            {:noreply,
-             socket
-             |> assign(:changeset, changeset)
-             |> assign(:form, form)
-             |> assign(:submitting, false)}
+          {:noreply,
+           socket
+           |> assign(:changeset, changeset)
+           |> assign(:form, form)
+           |> assign(:submitting, false)}
 
-          {:error, _error} ->
-            changeset = Map.put(changeset, :action, :validate)
-            form = to_form(changeset, as: socket.assigns.form_name)
+        {:halt, _error} ->
+          changeset = Map.put(changeset, :action, :validate)
+          form = to_form(changeset, as: socket.assigns.form_name)
 
-            {:noreply,
-             socket
-             |> assign(:changeset, changeset)
-             |> assign(:form, form)
-             |> assign(:submitting, false)}
-        end
-      else
-        # No backend configured - just send success message with the validated data
+          {:noreply,
+           socket
+           |> assign(:changeset, changeset)
+           |> assign(:form, form)
+           |> assign(:submitting, false)}
+      end
+    else
+      if changeset.valid? do
         result = %{
           config: [],
           data: data
@@ -315,15 +322,16 @@ defmodule DynamicForm.RendererLive do
 
         socket = handle_success(socket, result)
         {:noreply, assign(socket, :submitting, false)}
-      end
-    else
-      changeset = Map.put(changeset, :action, :validate)
-      form = to_form(changeset, as: socket.assigns.form_name)
+      else
+        changeset = Map.put(changeset, :action, :validate)
+        form = to_form(changeset, as: socket.assigns.form_name)
 
-      {:noreply,
-       socket
-       |> assign(:changeset, changeset)
-       |> assign(:form, form)}
+        {:noreply,
+         socket
+         |> assign(:changeset, changeset)
+         |> assign(:form, form)
+         |> assign(:submitting, false)}
+      end
     end
   end
 

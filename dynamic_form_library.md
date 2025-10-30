@@ -136,56 +136,73 @@ end
 
 ### DynamicForm.Backend Behaviour
 
-Backend modules handle form submission after validation. Each backend implements how to process the form data:
+Backend modules handle form submission. Each backend implements how to process the form data.
+
+**Important**: Backend functions are called on every form submission, regardless of validation state. This gives the application full control over the changeset and form processing.
+
+The backend function signature is:
+
+```elixir
+def submit(data, changeset, config)
+```
+
+Where:
+- `data` - The form data (result of `Ecto.Changeset.apply_changes/1`)
+- `changeset` - The Ecto.Changeset (may be valid or invalid)
+- `config` - Keyword list of backend configuration
+
+The function must return:
+- `{:cont, result}` - Continue with success (result typically contains `:message` and `:data`)
+- `{:halt, changeset}` - Halt with validation errors to display on the form
+- `{:halt, error}` - Halt with a general error
 
 ```elixir
 defmodule MyApp.EmailBackend do
   @behaviour DynamicForm.Backend
-  
+
   @impl DynamicForm.Backend
-  def submit(changeset, config) do
+  def submit(data, changeset, config) do
     recipient_email = Keyword.fetch!(config, :recipient_email)
     subject = Keyword.fetch!(config, :subject)
-    
-    if is_nil(changeset.data) do
-      raise ArgumentError, "changeset must be valid for email submission"
-    end
-    
-    form_data = Ecto.Changeset.apply_changes(changeset)
-    
-    case send_email(recipient_email, subject, form_data) do
-      {:ok, _result} -> 
-        {:ok, %{message: gettext("Form submitted successfully via email")}}
-      {:error, reason} -> 
-        {:error, %{message: gettext("Failed to send email: %{reason}", reason: reason)}}
+
+    # Check if built-in validations passed
+    if not changeset.valid? do
+      {:halt, changeset}
+    else
+      case send_email(recipient_email, subject, data) do
+        {:ok, _result} ->
+          {:cont, %{message: gettext("Form submitted successfully via email")}}
+        {:error, reason} ->
+          {:halt, %{message: gettext("Failed to send email: %{reason}", reason: reason)}}
+      end
     end
   end
-  
+
   @impl DynamicForm.Backend
   def validate_config(config) do
     required_keys = [:recipient_email, :subject]
-    
+
     case Enum.find(required_keys, &is_nil(config[&1])) do
       nil -> :ok
       missing_key -> {:error, gettext("Missing required config: %{key}", key: missing_key)}
     end
   end
-  
+
   defp send_email(recipient, subject, form_data) do
     # Implementation using your email service (Swoosh, etc.)
     # Format form_data into email body
     body = format_form_data_as_email(form_data)
-    
+
     # Send email logic here
     {:ok, "email_sent"}
   end
-  
+
   defp format_form_data_as_email(form_data) do
     form_data
     |> Enum.map(fn {key, value} -> "#{humanize_key(key)}: #{value}" end)
     |> Enum.join("\n")
   end
-  
+
   defp humanize_key(key) do
     key |> to_string() |> String.replace("_", " ") |> String.capitalize()
   end
@@ -193,25 +210,24 @@ end
 
 defmodule MyApp.DatabaseBackend do
   @behaviour DynamicForm.Backend
-  
+
   @impl DynamicForm.Backend
-  def submit(changeset, config) do
+  def submit(data, changeset, config) do
     table_name = Keyword.fetch!(config, :table_name)
-    
-    if is_nil(changeset.data) do
-      raise ArgumentError, "changeset must be valid for database submission"
-    end
-    
-    form_data = Ecto.Changeset.apply_changes(changeset)
-    
-    case save_to_database(table_name, form_data) do
-      {:ok, record} -> 
-        {:ok, %{message: gettext("Form data saved successfully"), record_id: record.id}}
-      {:error, reason} -> 
-        {:error, %{message: gettext("Failed to save: %{reason}", reason: reason)}}
+
+    # Check if built-in validations passed
+    if not changeset.valid? do
+      {:halt, changeset}
+    else
+      case save_to_database(table_name, data) do
+        {:ok, record} ->
+          {:cont, %{message: gettext("Form data saved successfully"), record_id: record.id}}
+        {:error, reason} ->
+          {:halt, %{message: gettext("Failed to save: %{reason}", reason: reason)}}
+      end
     end
   end
-  
+
   @impl DynamicForm.Backend
   def validate_config(config) do
     case config[:table_name] do
@@ -220,7 +236,7 @@ defmodule MyApp.DatabaseBackend do
       _ -> {:error, gettext("table_name must be a string")}
     end
   end
-  
+
   defp save_to_database(table_name, form_data) do
     # Implementation to save to your database
     # This would typically use Ecto to insert into a dynamic table

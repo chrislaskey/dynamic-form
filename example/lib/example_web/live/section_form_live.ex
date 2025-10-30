@@ -319,16 +319,20 @@ defmodule ExampleWeb.SectionFormLive do
   # Handle messages from RendererLive component
   @impl true
   def handle_info({:dynamic_form_success, _id, result}, socket) do
+    message = Map.get(result, :message, "Profile saved successfully!")
+
     {:noreply,
      socket
      |> assign(:submitted_data, result.data)
-     |> put_flash(:info, result.message || "Profile saved successfully!")}
+     |> put_flash(:info, message)}
   end
 
   @impl true
   def handle_info({:dynamic_form_error, _id, error}, socket) do
+    message = Map.get(error, :message, "Failed to save profile")
+
     {:noreply,
      socket
-     |> put_flash(:error, error.message || "Failed to save profile")}
+     |> put_flash(:error, message)}
   end
 end
