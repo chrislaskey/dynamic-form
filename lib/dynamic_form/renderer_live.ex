@@ -195,7 +195,6 @@ defmodule DynamicForm.RendererLive do
     current_params =
       socket.assigns.changeset
       |> Ecto.Changeset.apply_changes()
-      |> Map.from_struct()
       |> Map.put(field_atom, assigns.remaining_files)
 
     changeset = DynamicForm.Changeset.create_changeset(socket.assigns.instance, current_params)
@@ -683,7 +682,6 @@ defmodule DynamicForm.RendererLive do
       current_params =
         socket.assigns.changeset
         |> Ecto.Changeset.apply_changes()
-        |> Map.from_struct()
         |> Map.put(field_atom, updated_files)
 
       changeset = DynamicForm.Changeset.create_changeset(socket.assigns.instance, current_params)
